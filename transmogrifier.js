@@ -101,7 +101,35 @@ async function readFile(filePath) {
 // Function for reading a URL
 
 async function readURL(url) {
-    // TODO
+    let data;
+    const http = require('http');
+    const https = require('https');
+
+    const httpModule = url.startsWith("https://") ? https : http;
+
+    data = await new Promise((resolve, reject) => {
+        httpModule.get(url, (res) => {
+            if (res.statusCode !== 200) {
+                reject(new Error(`Failed to read URL \"${url}\": HTTP status code ${res.statusCode}`));
+                return;
+            }
+
+            let rawData = '';
+            res.on('data', (chunk) => { rawData += chunk; });
+            res.on('end', () => {
+                try {
+                    resolve(rawData);
+                }
+                catch (e) {
+                    reject(e);
+                }
+            });
+        }).on('error', (e) => {
+            reject(e);
+        });
+    })
+
+    return data;
 }
 
 // Platform-specific functions for writing local files
@@ -328,7 +356,7 @@ const sources =
     file_read: async function (params) {
         return await readFile(params.path);
     },
-    url_read: async function(params) {
+    url_read: async function (params) {
         return await readURL(params.path);
     }
 };

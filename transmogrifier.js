@@ -328,7 +328,7 @@ const sources =
     file_read: async function (params) {
         return await readFile(params.path);
     },
-    url_read: async function(params) {
+    url_read: async function (params) {
         return await readURL(params.path);
     }
 };
@@ -357,6 +357,7 @@ const sinks =
 };
 
 async function runPipeline(sourceFunc, sourceParams, filters, sinkFunc, sinkParams, schema) {
+    console.log(schema);
     let data = await sourceFunc(sourceParams);
 
     for (const filter of filters) {
@@ -388,18 +389,49 @@ function getSinkFunction(name) {
     return sinks[name];
 }
 
-function getSchema(name) {
-    // TODO if "name" is a URL, read from the URL (look at main loadManifest())
-    // if "name" is a filepath, read from the filepath
-    // this probably mimics loadManifest but with a schema instead
+async function getSchema(path) {
+    let schema;
+    const http = require('http');
+    const https = require('https');
+    
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+        const httpModule = path.startsWith("https://") ? https : http;
 
-    return parsed_schema;
+        schema = await new Promise((resolve, reject) => {
+            httpModule.get(path, (res) => {
+                if (res.statusCode !== 200) {
+                    reject(new Error(`Failed to read schema \"${path}\": HTTP status code ${res.statusCode}`));
+                    return;
+                }
+
+                let rawData = '';
+                res.on('data', (chunk) => { rawData += chunk; });
+                res.on('end', () => {
+                    try {
+                        resolve(rawData);
+                    }
+                    catch (e) {
+                        reject(e);
+                    }
+                });
+            }).on('error', (e) => {
+                reject(e);
+            });
+        })
+    }
+    else {
+        schema = await readFile(path);
+    }
+
+    return schema;
 }
 
-async function transmogrifyEntry(entry, schema) {
+async function transmogrifyEntry(entry) {
     const source = entry.source;
     const filters = entry.filters;
     const sink = entry.sink;
+    
+    const schema = await getSchema(entry.schema);
     const sourceFunc = getSourceFunction(source.func);
     const sinkFunc = getSinkFunction(sink.func);
 
@@ -424,7 +456,3 @@ module.exports =
 {
     transmogrify: transmogrify
 };
-
-    // Questions:
-    // What is the purpose of schema
-    // 

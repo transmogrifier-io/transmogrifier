@@ -357,7 +357,6 @@ const sinks =
 };
 
 async function runPipeline(sourceFunc, sourceParams, filters, sinkFunc, sinkParams, schema) {
-    console.log(schema);
     let data = await sourceFunc(sourceParams);
 
     for (const filter of filters) {

@@ -564,8 +564,8 @@ async function transmogrifyEntry(entry) {
     const sink = entry.sink;
     
     const schema = await getSchema(entry.schema);
-    const sourceFunc = getSourceFunction(source.func);
-    const sinkFunc = getSinkFunction(sink.func);
+    const sourceFunc = await getSourceFunction(source.func);
+    const sinkFunc = await getSinkFunction(sink.func);
 
     return runPipeline(sourceFunc, source.params, filters, sinkFunc, sink.params, schema)
 }

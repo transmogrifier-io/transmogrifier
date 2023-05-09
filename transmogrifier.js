@@ -395,11 +395,17 @@ async function runPipeline(sourceFunc, sourceParams, filters, sinkFunc, sinkPara
     await sinkFunc(sinkParams, data);
 }
 
-function getSourceFunction(name) {
+async function getSourceFunction(name) {
     // TODO if "name" is a URL, read from the URL instead (look at main loadManifest())
     // can parse the function the same way as we do filters (new Function(url.data)())
 
-    return sources[name];
+    if (name.startsWith("http://") || name.startsWith("https://")) {
+        let sourceFunction = await url_read(name)
+        return new Function(sourceFunction)();
+    }
+    else {
+        return sources[name];
+    }
 }
 
 function getFilterFunction(name) {

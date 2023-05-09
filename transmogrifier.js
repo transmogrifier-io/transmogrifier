@@ -250,23 +250,22 @@ async function writeURL(url, data) {
             'Content-Length': data.length
         }
     }
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-        const httpModule = url.startsWith("https://") ? https : http;
-        
-        result = await new Promise((resolve, reject) => {
-            httpModule.request(options, (res) => {
-                if (res.statusCode !== 200) {
-                    reject(new Error(`Failed to post data \"${options.hostname + options.path}\": HTTP status code ${res.statusCode}`));
-                    return;
-                }
-                res.on("data", d => {
-                    resolve(d);
-                });
-            }).on('error', (e) => {
-                reject(e);
+    
+    const httpModule = url.startsWith("https://") ? https : http;
+    
+    result = await new Promise((resolve, reject) => {
+        httpModule.request(options, (res) => {
+            if (res.statusCode !== 200) {
+                reject(new Error(`Failed to post data \"${options.hostname + options.path}\": HTTP status code ${res.statusCode}`));
+                return;
+            }
+            res.on("data", d => {
+                resolve(d);
             });
-        })
-    }
+        }).on('error', (e) => {
+            reject(e);
+        });
+    })
 
     return result;
 }

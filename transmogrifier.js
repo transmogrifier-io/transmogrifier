@@ -429,6 +429,7 @@ async function getSourceFunction(name) {
                 reject(e);
             });
         })
+        source = new Function(source)();
     }
     else {
         source = sources[name];

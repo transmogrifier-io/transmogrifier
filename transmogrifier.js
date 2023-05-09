@@ -238,7 +238,39 @@ async function writeFile(filePath, data) {
 // Function for writing to a URL
 
 async function writeURL(url, data) {
-    // TODO
+    let result;
+    const http = require('http');
+    const https = require('https');
+    const newUrl = new URL(url)
+    
+    //specifies that it is a POST request
+    const options ={
+        hostname: newUrl.hostname,
+        path: newUrl.pathname, 
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': data.length
+        }
+    }
+    
+    const httpModule = url.startsWith("https://") ? https : http;
+    
+    result = await new Promise((resolve, reject) => {
+        httpModule.request(options, (res) => {
+            if (res.statusCode !== 200) {
+                reject(new Error(`Failed to post data \"${options.hostname + options.path}\": HTTP status code ${res.statusCode}`));
+                return;
+            }
+            res.on("data", d => {
+                resolve(d);
+            });
+        }).on('error', (e) => {
+            reject(e);
+        });
+    })
+
+    return result;
 }
 
 // Platform-specific functions for listing files in a directory
@@ -472,10 +504,6 @@ async function getFilterFunction(name) {
     else {
         filter = filters[name];
     }
-
-
-    // TODO if "name" is a URL, read from the URL instead (look at main loadManifest())
-    // can parse the function the same way as we do filters (new Function(url.data)())
 
     return filter;
 }

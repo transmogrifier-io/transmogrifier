@@ -135,6 +135,16 @@ async function readURL(url) {
     return data;
 }
 
+async function readURLOrFile(path) {
+    let data;
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+        data = await readURL(path);
+    } else {
+        data = await readFile(path);
+    }
+    return data;
+}
+
 // Platform-specific functions for writing local files
 
 // Node.js
@@ -424,9 +434,11 @@ async function runPipeline(sourceFunc, sourceParams, filters, sinkFunc, sinkPara
 
     for (const filter of filters) {
         const filterFunc = await getFilterFunction(filter.func);
-        data = await filterFunc(data, filter.params);
+        const filterParams = await getFilterParameters(filter.params);
+        filterParams.schema = schema;
+        data = await filterFunc(data, filterParams);
     }
-
+    
     await sinkFunc(sinkParams, data);
 }
 
@@ -473,33 +485,9 @@ async function getSourceFunction(name) {
 async function getFilterFunction(name) {
     let filter;
 
-    const http = require('http');
-    const https = require('https');
-
     if (name.startsWith("http://") || name.startsWith("https://")) {
-        const httpModule = name.startsWith("https://") ? https : http;
-
-        filter = await new Promise((resolve, reject) => {
-            httpModule.get(name, (res) => {
-                if (res.statusCode !== 200) {
-                    reject(new Error(`Failed to read filter ${name}: HTTP status code ${res.statusCode}`));
-                    return;
-                }
-
-                let rawData = '';
-                res.on('data', (chunk) => { rawData += chunk; });
-                res.on('end', () => {
-                    try {
-                        resolve(rawData);
-                    } 
-                    catch (e) {
-                        reject(e);
-                    }
-                });
-            }).on('error', (e) => {
-                reject(e);
-            });
-        })
+        filter = await readURL(name);
+        filter = new Function(filter)();
     }
     else {
         filter = filters[name];
@@ -552,40 +540,22 @@ async function getSinkFunction(name) {
 }
 
 async function getSchema(path) {
-    let schema;
-    const http = require('http');
-    const https = require('https');
-    
-    if (path.startsWith("http://") || path.startsWith("https://")) {
-        const httpModule = path.startsWith("https://") ? https : http;
-
-        schema = await new Promise((resolve, reject) => {
-            httpModule.get(path, (res) => {
-                if (res.statusCode !== 200) {
-                    reject(new Error(`Failed to read schema \"${path}\": HTTP status code ${res.statusCode}`));
-                    return;
-                }
-
-                let rawData = '';
-                res.on('data', (chunk) => { rawData += chunk; });
-                res.on('end', () => {
-                    try {
-                        resolve(rawData);
-                    }
-                    catch (e) {
-                        reject(e);
-                    }
-                });
-            }).on('error', (e) => {
-                reject(e);
-            });
-        })
-    }
-    else {
-        schema = await readFile(path);
-    }
-
+    let schema = await readURLOrFile(path);
     return schema;
+}
+
+async function getFilterParameters(params) {
+    if (params["JSON-validator"] === true) {
+        const validator = require('jsonschema').Validator;
+        params["JSON-validator"] = new validator();
+    }
+
+    if (params["library"]) {
+        let library = await readURLOrFile(params["library"]);
+        params["library"] = new Function(library)();
+    }
+    
+    return params;
 }
 
 async function transmogrifyEntry(entry) {

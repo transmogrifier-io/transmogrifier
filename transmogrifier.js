@@ -403,8 +403,7 @@ async function runPipeline(sourceFunc, sourceParams, filters, sinkFunc, sinkPara
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
     }
-
-    console.log(data);
+    
     await sinkFunc(sinkParams, data);
 }
 

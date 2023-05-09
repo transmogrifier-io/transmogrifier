@@ -443,6 +443,7 @@ async function getSinkFunction(name) {
                 reject(e);
             });
         })
+        sink = new Function(sink)();
     }
     else {
         sink = sinks[name];

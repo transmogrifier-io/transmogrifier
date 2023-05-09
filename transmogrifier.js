@@ -425,7 +425,7 @@ async function getSinkFunction(name) {
         sink = await new Promise((resolve, reject) => {
             httpModule.get(name, (res) => {
                 if (res.statusCode !== 200) {
-                    reject(new Error(`Failed to read filter ${name}: HTTP status code ${res.statusCode}`));
+                    reject(new Error(`Failed to read sink ${name}: HTTP status code ${res.statusCode}`));
                     return;
                 }
 

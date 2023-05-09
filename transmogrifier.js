@@ -409,11 +409,46 @@ function getFilterFunction(name) {
     return filters[name];
 }
 
-function getSinkFunction(name) {
+async function getSinkFunction(name) {
     // TODO if "name" is a URL, read from the URL instead (look at main loadManifest())
     // can parse the function the same way as we do filters (new Function(url.data)())
 
-    return sinks[name];
+
+    let sink;
+
+    const http = require('http');
+    const https = require('https');
+
+    if (name.startsWith("http://") || name.startsWith("https://")) {
+        const httpModule = name.startsWith("https://") ? https : http;
+
+        sink = await new Promise((resolve, reject) => {
+            httpModule.get(name, (res) => {
+                if (res.statusCode !== 200) {
+                    reject(new Error(`Failed to read filter ${name}: HTTP status code ${res.statusCode}`));
+                    return;
+                }
+
+                let rawData = '';
+                res.on('data', (chunk) => { rawData += chunk; });
+                res.on('end', () => {
+                    try {
+                        resolve(rawData);
+                    } 
+                    catch (e) {
+                        reject(e);
+                    }
+                });
+            }).on('error', (e) => {
+                reject(e);
+            });
+        })
+    }
+    else {
+        sink = sinks[name];
+    }
+
+    return sink
 }
 
 async function getSchema(path) {

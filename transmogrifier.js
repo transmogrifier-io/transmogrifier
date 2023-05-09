@@ -1,5 +1,8 @@
 // Platform-specific functions for reading local files
 
+const { rejects } = require('assert');
+const { resolve } = require('path');
+
 // Node.js
 function readLocalFileNode(filePath) {
     const fs = require('fs');
@@ -395,11 +398,44 @@ async function runPipeline(sourceFunc, sourceParams, filters, sinkFunc, sinkPara
     await sinkFunc(sinkParams, data);
 }
 
-function getSourceFunction(name) {
-    // TODO if "name" is a URL, read from the URL instead (look at main loadManifest())
-    // can parse the function the same way as we do filters (new Function(url.data)())
+// Get the source function from the given parameter, if param is a URL, get the function from the URL,
+// otherwise, get the function from the mapping
+async function getSourceFunction(name) {
+    let source;
 
-    return sources[name];
+    const http = require('http');
+    const https = require('https');
+
+    if (name.startsWith("http://") || name.startsWith("https://")) {
+        const httpModule = name.startsWith("https://") ? https : http;
+
+        source = await new Promise((resolve, reject) => {
+            httpModule.get(name, (res) => {
+                if (res.statusCode !== 200) {
+                    reject(new Error(`Failed to read source ${name}: HTTP status code ${res.statusCode}`));
+                    return
+                }
+                let rawData = '';
+                res.on('data', (chunk) => {rawData += chunk});
+                res.on('end', () => {
+                    try {
+                        resolve(rawData);
+                    }
+                    catch(e) {
+                        reject(e);
+                    }
+                });
+            }).on('error', (e) => {
+                reject(e);
+            });
+        })
+        source = new Function(source)();
+    }
+    else {
+        source = sources[name];
+    }
+
+    return source
 }
 
 async function getFilterFunction(name) {

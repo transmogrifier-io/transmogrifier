@@ -419,7 +419,7 @@ const filters =
 const sinks =
 {
     null: async function (params, data) {
-        return data;
+        return;
     },
     file_write: async function (params, data) {
         return await writeFile(params.path, data);

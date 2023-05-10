@@ -418,6 +418,9 @@ const filters =
 
 const sinks =
 {
+    null: async function (params, data) {
+        return;
+    },
     file_write: async function (params, data) {
         return await writeFile(params.path, data);
     },
@@ -434,8 +437,7 @@ async function runPipeline(sourceFunc, sourceParams, filters, sinkFunc, sinkPara
         const filterParams = await getFilterParameters(filter.params);
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
-    }
-    
+    } 
     await sinkFunc(sinkParams, data);
 }
 
@@ -505,7 +507,7 @@ async function getFilterParameters(params) {
 async function transmogrifyEntry(entry, schema_path) {
     const source = entry.source;
     const filters = entry.filters;
-    const sink = entry.sink;
+    let sink = entry.sink ? entry.sink : {func: "null", params: {}};
     
     const schema = await getSchema(schema_path);
     const sourceFunc = await getSourceFunction(source.func);

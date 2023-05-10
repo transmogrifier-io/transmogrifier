@@ -395,9 +395,6 @@ async function listFiles(dirPath, extension) {
 
 const sources =
 {
-    null: async function (params) { //can the function be called null because that's a built in keyword?
-        return null;
-    },
     file_read: async function (params) {
         return await readFile(params.path);
     },
@@ -421,8 +418,8 @@ const filters =
 
 const sinks =
 {
-    null: async function (params, data) {
-        return null;
+    null_sink: async function (params, data) {
+        return data;
     },
     file_write: async function (params, data) {
         return await writeFile(params.path, data);
@@ -440,8 +437,7 @@ async function runPipeline(sourceFunc, sourceParams, filters, sinkFunc, sinkPara
         const filterParams = await getFilterParameters(filter.params);
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
-    }
-    
+    } 
     await sinkFunc(sinkParams, data);
 }
 
@@ -511,7 +507,7 @@ async function getFilterParameters(params) {
 async function transmogrifyEntry(entry, schema_path) {
     const source = entry.source;
     const filters = entry.filters;
-    const sink = entry.sink;
+    let sink = entry.sink ? entry.sink : {func: "null_sink", params: {}};
     
     const schema = await getSchema(schema_path);
     const sourceFunc = await getSourceFunction(source.func);

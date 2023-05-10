@@ -418,7 +418,7 @@ const filters =
 
 const sinks =
 {
-    null_sink: async function (params, data) {
+    null: async function (params, data) {
         return data;
     },
     file_write: async function (params, data) {
@@ -507,7 +507,7 @@ async function getFilterParameters(params) {
 async function transmogrifyEntry(entry, schema_path) {
     const source = entry.source;
     const filters = entry.filters;
-    let sink = entry.sink ? entry.sink : {func: "null_sink", params: {}};
+    let sink = entry.sink ? entry.sink : {func: "null", params: {}};
     
     const schema = await getSchema(schema_path);
     const sourceFunc = await getSourceFunction(source.func);

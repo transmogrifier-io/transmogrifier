@@ -1,8 +1,5 @@
 // Platform-specific functions for reading local files
 
-const { rejects } = require('assert');
-const { resolve } = require('path');
-
 // Node.js
 function readLocalFileNode(filePath) {
     const fs = require('fs');
@@ -447,32 +444,8 @@ async function runPipeline(sourceFunc, sourceParams, filters, sinkFunc, sinkPara
 async function getSourceFunction(name) {
     let source;
 
-    const http = require('http');
-    const https = require('https');
-
     if (name.startsWith("http://") || name.startsWith("https://")) {
-        const httpModule = name.startsWith("https://") ? https : http;
-
-        source = await new Promise((resolve, reject) => {
-            httpModule.get(name, (res) => {
-                if (res.statusCode !== 200) {
-                    reject(new Error(`Failed to read source ${name}: HTTP status code ${res.statusCode}`));
-                    return
-                }
-                let rawData = '';
-                res.on('data', (chunk) => {rawData += chunk});
-                res.on('end', () => {
-                    try {
-                        resolve(rawData);
-                    }
-                    catch(e) {
-                        reject(e);
-                    }
-                });
-            }).on('error', (e) => {
-                reject(e);
-            });
-        })
+        source = await readURL(name);
         source = new Function(source)();
     }
     else {
@@ -497,39 +470,10 @@ async function getFilterFunction(name) {
 }
 
 async function getSinkFunction(name) {
-    // TODO if "name" is a URL, read from the URL instead (look at main loadManifest())
-    // can parse the function the same way as we do filters (new Function(url.data)())
-
-
     let sink;
 
-    const http = require('http');
-    const https = require('https');
-
     if (name.startsWith("http://") || name.startsWith("https://")) {
-        const httpModule = name.startsWith("https://") ? https : http;
-
-        sink = await new Promise((resolve, reject) => {
-            httpModule.get(name, (res) => {
-                if (res.statusCode !== 200) {
-                    reject(new Error(`Failed to read sink ${name}: HTTP status code ${res.statusCode}`));
-                    return;
-                }
-
-                let rawData = '';
-                res.on('data', (chunk) => { rawData += chunk; });
-                res.on('end', () => {
-                    try {
-                        resolve(rawData);
-                    } 
-                    catch (e) {
-                        reject(e);
-                    }
-                });
-            }).on('error', (e) => {
-                reject(e);
-            });
-        })
+        sink = await readURL(name);
         sink = new Function(sink)();
     }
     else {
@@ -545,7 +489,7 @@ async function getSchema(path) {
 }
 
 async function getFilterParameters(params) {
-    if (params["JSON-validator"] === true) {
+    if (params["validator"] === "json") {
         const validator = require('jsonschema').Validator;
         params["JSON-validator"] = new validator();
     }
@@ -558,12 +502,12 @@ async function getFilterParameters(params) {
     return params;
 }
 
-async function transmogrifyEntry(entry) {
+async function transmogrifyEntry(entry, schema_path) {
     const source = entry.source;
     const filters = entry.filters;
     const sink = entry.sink;
     
-    const schema = await getSchema(entry.schema);
+    const schema = await getSchema(schema_path);
     const sourceFunc = await getSourceFunction(source.func);
     const sinkFunc = await getSinkFunction(sink.func);
 
@@ -571,17 +515,11 @@ async function transmogrifyEntry(entry) {
 }
 
 async function transmogrify(manifest) {
-    manifest.forEach(function (schemaEntry) {
-        const keys = Object.keys(schemaEntry);
-
-        keys.forEach(function (entryName) {
-            const entries = schemaEntry[entryName];
-
-            entries.forEach(function (entry) {
-                transmogrifyEntry(entry);
-            });
-        });
-    });
+    for (schemaEntry of manifest) {
+        for (entry of schemaEntry.entries) {
+            await transmogrifyEntry(entry, schemaEntry.schema);
+        }
+    }
 }
 
 module.exports =

@@ -395,6 +395,9 @@ async function listFiles(dirPath, extension) {
 
 const sources =
 {
+    null: async function (params) { //can the function be called null because that's a built in keyword?
+        return null;
+    },
     file_read: async function (params) {
         return await readFile(params.path);
     },
@@ -418,6 +421,9 @@ const filters =
 
 const sinks =
 {
+    null: async function (params, data) {
+        return null;
+    },
     file_write: async function (params, data) {
         return await writeFile(params.path, data);
     },

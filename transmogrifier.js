@@ -309,20 +309,20 @@ async function writeURL(url, data) {
     const http = require('http');
     const https = require('https');
     const newUrl = new URL(url)
-    
+
     //specifies that it is a POST request
-    const options ={
+    const options = {
         hostname: newUrl.hostname,
-        path: newUrl.pathname, 
+        path: newUrl.pathname,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Content-Length': data.length
         }
     }
-    
+
     const httpModule = url.startsWith("https://") ? https : http;
-    
+
     result = await new Promise((resolve, reject) => {
         httpModule.request(options, (res) => {
             if (res.statusCode !== 200) {
@@ -489,16 +489,28 @@ const sinks =
     }
 };
 
-async function runPipeline(sourceFunc, sourceParams, filters, sinkFunc, sinkParams, schema) {
+async function runPipelineEntry(sourceFunc, sourceParams, filters, sinkFunc, sinkParams, schema) {
     let data = await sourceFunc(sourceParams);
 
     for (const filter of filters) {
         const filterFunc = await getFilterFunction(filter.func);
-        const filterParams = await getFilterParameters(filter.params);
+        const filterParams = await getFilterParameters(filter.params ? filter.params : {});
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
-    } 
+    }
     await sinkFunc(sinkParams, data);
+    return data;
+}
+
+async function runPipelineSchemaEntry(data, filters, sinkFunc, sinkParams, schema) {
+    for (const filter of filters) {
+        const filterFunc = await getFilterFunction(filter.func);
+        const filterParams = await getFilterParameters(filter.params ? filter.params : {});
+        filterParams.schema = schema;
+        data = await filterFunc(data, filterParams);
+    }
+    await sinkFunc(sinkParams, data);
+    return data;
 }
 
 // Get the source function from the given parameter, if param is a URL, get the function from the URL,
@@ -546,7 +558,7 @@ async function getSinkFunction(name) {
 }
 
 async function getSchema(path) {
-    let schema = await readURLOrFile(path);
+    const schema = await readURLOrFile(path);
     return schema;
 }
 
@@ -560,28 +572,44 @@ async function getFilterParameters(params) {
         let library = await readURLOrFile(params["library"]);
         params["library"] = new Function(library)();
     }
-    
+
     return params;
 }
 
 async function transmogrifyEntry(entry, schema_path) {
     const source = entry.source;
     const filters = entry.filters;
-    let sink = entry.sink ? entry.sink : {func: "null", params: {}};
-    
+    const sink = entry.sink ? entry.sink : { func: "null", params: {} };
+
     const schema = await getSchema(schema_path);
     const sourceFunc = await getSourceFunction(source.func);
     const sinkFunc = await getSinkFunction(sink.func);
 
-    return runPipeline(sourceFunc, source.params, filters, sinkFunc, sink.params, schema)
+    return runPipelineEntry(sourceFunc, source.params, filters, sinkFunc, sink.params, schema)
+}
+
+async function transmogrifySchemaEntry(data, schemaEntry) {
+    const filters = schemaEntry.filters ? schemaEntry.filters : [];
+    const sink = schemaEntry.sink ? schemaEntry.sink : { func: "null", params: {} };
+
+    const schema = await getSchema(schemaEntry.schema);
+    const sinkFunc = await getSinkFunction(sink.func);
+
+    return runPipelineSchemaEntry(data, filters, sinkFunc, sink.params, schema)
 }
 
 async function transmogrify(manifest) {
+    const schemaEntryDatas = [];
     for (schemaEntry of manifest) {
+        const entryDatas = [];
         for (entry of schemaEntry.entries) {
-            await transmogrifyEntry(entry, schemaEntry.schema);
+            let entryData = await transmogrifyEntry(entry, schemaEntry.schema);
+            entryDatas.push(entryData);
         }
+        let schemaEntryData = await transmogrifySchemaEntry(entryDatas, schemaEntry);
+        schemaEntryDatas.push(schemaEntryData);
     }
+    return schemaEntryDatas;
 }
 
 module.exports =

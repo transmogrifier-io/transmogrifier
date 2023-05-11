@@ -42,17 +42,15 @@ function loadManifest(manifestPath, callback) {
 function main(argv) {
     const manifestUrl = argv[0];
 
-    loadManifest(manifestUrl, (err, data) => {
+    loadManifest(manifestUrl, async (err, data) => {
         if (err) {
             console.error(err);
             process.exit(1);
         }
         else {
             const manifest = JSON.parse(data);
-
             try {
-                transmogrifier.transmogrify(manifest)
-                    .then(r => console.log("done"))
+               data = await transmogrifier.transmogrify(manifest);
             }
             catch (error) {
                 console.log(error);

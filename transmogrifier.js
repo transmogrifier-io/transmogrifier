@@ -434,7 +434,7 @@ async function runPipelineEntry(sourceFunc, sourceParams, filters, sinkFunc, sin
 
     for (const filter of filters) {
         const filterFunc = await getFilterFunction(filter.func);
-        const filterParams = await getFilterParameters(filter.params);
+        const filterParams = await getFilterParameters(filter.params ? filter.params : {});
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
     }
@@ -445,10 +445,9 @@ async function runPipelineEntry(sourceFunc, sourceParams, filters, sinkFunc, sin
 async function runPipelineSchemaEntry(data, filters, sinkFunc, sinkParams, schema) {
     for (const filter of filters) {
         const filterFunc = await getFilterFunction(filter.func);
-        const filterParams = await getFilterParameters(filter.params);
+        const filterParams = await getFilterParameters(filter.params ? filter.params : {});
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
-        console.log(data);
     }
     await sinkFunc(sinkParams, data);
     return data;

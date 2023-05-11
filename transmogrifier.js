@@ -145,10 +145,62 @@ async function readURLOrFile(path) {
 // Platform-specific functions for writing local files
 
 // Node.js
-function writeLocalFileNode(filePath, data) {
+// This works for ODEN-specific JSON files
+// async function writeLocalFileNode(filePath, append, data) {
+//     const fs = require('fs');
+//     // check if we need to append, and if the file exists
+//     if (append && fs.existsSync(filePath)) {
+//         await new Promise(function (resolve, reject) {
+//             fs.readFile(filePath, (err, existing_data) => {
+//                 let data_in_file = JSON.parse(existing_data);
+
+//                 // field is data or errors
+//                 for (let field in data_in_file) {
+//                     let parsed_data = JSON.parse(data)
+//                     for (let entry of parsed_data[field]) {
+//                         let entry_append = true;
+//                         for (existing_entry of data_in_file[field]) {
+//                             if (JSON.stringify(entry) == JSON.stringify(existing_entry)) {
+//                                 entry_append = false;
+//                             }
+//                         }
+//                         if (entry_append) {
+//                             data_in_file[field].push(entry);
+//                         }
+//                     }
+
+//                 }
+//                 data = JSON.stringify(data_in_file, null, 2);
+//                 resolve();
+//             });
+//         });
+//     }
+//     // write to file
+//     return new Promise(function (resolve, reject) {
+//         fs.writeFile(filePath, data, 'utf8', function (err) {
+//             if (err) {
+//                 reject(err);
+//             }
+//             else {
+//                 resolve();
+//             }
+//         });
+//     });
+// }
+
+// Node.js
+function writeLocalFileNode(filePath, append, data) {
     const fs = require('fs');
+    let writeFunc;
+    if (append) {
+        data = "\n" + data
+        writeFunc = fs.appendFile;
+    } else {
+        writeFunc = fs.writeFile;
+    }
+
     return new Promise(function (resolve, reject) {
-        fs.writeFile(filePath, data, 'utf8', function (err) {
+        writeFunc(filePath, data, 'utf8', function (err) {
             if (err) {
                 reject(err);
             }
@@ -160,7 +212,7 @@ function writeLocalFileNode(filePath, data) {
 }
 
 // Web browser
-function writeLocalFileWeb(filePath, data) {
+function writeLocalFileWeb(filePath, append, data) {
     const xhr = new XMLHttpRequest();
     return new Promise(function (resolve, reject) {
         xhr.onreadystatechange = function () {
@@ -180,7 +232,7 @@ function writeLocalFileWeb(filePath, data) {
 }
 
 // Android
-function writeLocalFileAndroid(filePath, data) {
+function writeLocalFileAndroid(filePath, append, data) {
     const scheme = 'content://';
     const uri = android.net.Uri.parse(scheme + filePath);
     const outputStream = context.getContentResolver().openOutputStream(uri);
@@ -191,7 +243,7 @@ function writeLocalFileAndroid(filePath, data) {
 }
 
 // iOS
-function writeLocalFileiOS(filePath, data) {
+function writeLocalFileiOS(filePath, append, data) {
     window.webkit.messageHandlers.writeFile.postMessage({ path: filePath, data: data });
     return Promise.resolve();
 }
@@ -199,43 +251,51 @@ function writeLocalFileiOS(filePath, data) {
 // Promisified versions of the platform-specific functions
 
 // Node.js
-function writeLocalFileNodeAsync(filePath, data) {
-    return writeLocalFileNode(filePath, data);
+function writeLocalFileNodeAsync(filePath, append, data) {
+    return writeLocalFileNode(filePath, append, data);
 }
 
 // Web browser
-function writeLocalFileWebAsync(filePath, data) {
-    return writeLocalFileWeb(filePath, data);
+function writeLocalFileWebAsync(filePath, append, data) {
+    return writeLocalFileWeb(filePath, append, data);
 }
 
 // Android
-function writeLocalFileAndroidAsync(filePath, data) {
-    return writeLocalFileAndroid(filePath, data);
+function writeLocalFileAndroidAsync(filePath, append, data) {
+    return writeLocalFileAndroid(filePath, append, data);
 }
 
 // iOS
-function writeLocalFileiOSAsync(filePath, data) {
-    return writeLocalFileiOS(filePath, data);
+function writeLocalFileiOSAsync(filePath, append, data) {
+    return writeLocalFileiOS(filePath, append, data);
 }
 
 // Function for writing a file
 
-async function writeFile(filePath, data) {
+async function writeFile(params, data) {
+    let filePath;
+    if (params.path) {
+        filePath = params.path;
+    }
+    let append = false;
+    if (params.append) {
+        append = params.append;
+    }
     if (typeof window === 'undefined') {
         // Running in Node.js
-        await writeLocalFileNodeAsync(filePath, data);
+        await writeLocalFileNodeAsync(filePath, append, data);
     }
     else if (typeof XMLHttpRequest !== 'undefined') {
         // Running in a web browser
-        await writeLocalFileWebAsync(filePath, data);
+        await writeLocalFileWebAsync(filePath, append, data);
     }
     else if (typeof android !== 'undefined') {
         // Running in an Android app
-        await writeLocalFileAndroidAsync(filePath, data);
+        await writeLocalFileAndroidAsync(filePath, append, data);
     }
     else if (typeof window.webkit !== 'undefined' && typeof window.webkit.messageHandlers.writeFile !== 'undefined') {
         // Running in an iOS app
-        await writeLocalFileiOSAsync(filePath, data);
+        await writeLocalFileiOSAsync(filePath, append, data);
     }
     else {
         throw new Error('Environment not supported');
@@ -422,10 +482,10 @@ const sinks =
         return;
     },
     file_write: async function (params, data) {
-        return await writeFile(params.path, data);
+        return await writeFile(params, data);
     },
     url_write: async function (params, data) {
-        return await writeURL(params.path, data);
+        return await writeURL(params, data);
     }
 };
 

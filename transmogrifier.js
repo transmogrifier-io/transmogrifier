@@ -145,38 +145,62 @@ async function readURLOrFile(path) {
 // Platform-specific functions for writing local files
 
 // Node.js
-async function writeLocalFileNode(filePath, append, data) {
+// This works for ODEN-specific JSON files
+// async function writeLocalFileNode(filePath, append, data) {
+//     const fs = require('fs');
+//     // check if we need to append, and if the file exists
+//     if (append && fs.existsSync(filePath)) {
+//         await new Promise(function (resolve, reject) {
+//             fs.readFile(filePath, (err, existing_data) => {
+//                 let data_in_file = JSON.parse(existing_data);
+
+//                 // field is data or errors
+//                 for (let field in data_in_file) {
+//                     let parsed_data = JSON.parse(data)
+//                     for (let entry of parsed_data[field]) {
+//                         let entry_append = true;
+//                         for (existing_entry of data_in_file[field]) {
+//                             if (JSON.stringify(entry) == JSON.stringify(existing_entry)) {
+//                                 entry_append = false;
+//                             }
+//                         }
+//                         if (entry_append) {
+//                             data_in_file[field].push(entry);
+//                         }
+//                     }
+
+//                 }
+//                 data = JSON.stringify(data_in_file, null, 2);
+//                 resolve();
+//             });
+//         });
+//     }
+//     // write to file
+//     return new Promise(function (resolve, reject) {
+//         fs.writeFile(filePath, data, 'utf8', function (err) {
+//             if (err) {
+//                 reject(err);
+//             }
+//             else {
+//                 resolve();
+//             }
+//         });
+//     });
+// }
+
+// Node.js
+function writeLocalFileNode(filePath, append, data) {
     const fs = require('fs');
-    // check if we need to append, and if the file exists
-    if (append && fs.existsSync(filePath)) {
-        await new Promise(function (resolve, reject) {
-            fs.readFile(filePath, (err, existing_data) => {
-                let data_in_file = JSON.parse(existing_data);
-
-                // field is data or errors
-                for (let field in data_in_file) {
-                    let parsed_data = JSON.parse(data)
-                    for (let entry of parsed_data[field]) {
-                        let entry_append = true;
-                        for (existing_entry of data_in_file[field]) {
-                            if (JSON.stringify(entry) == JSON.stringify(existing_entry)) {
-                                entry_append = false;
-                            }
-                        }
-                        if (entry_append) {
-                            data_in_file[field].push(entry);
-                        }
-                    }
-
-                }
-                data = JSON.stringify(data_in_file, null, 2);
-                resolve();
-            });
-        });
+    let writeFunc;
+    if (append) {
+        data = "\n" + data
+        writeFunc = fs.appendFile;
+    } else {
+        writeFunc = fs.writeFile;
     }
-    // write to file
+
     return new Promise(function (resolve, reject) {
-        fs.writeFile(filePath, data, 'utf8', function (err) {
+        writeFunc(filePath, data, 'utf8', function (err) {
             if (err) {
                 reject(err);
             }

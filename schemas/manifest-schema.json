@@ -22,9 +22,9 @@
                         }
                     }
         },
-        "sink": {
+        "sinks": {
             "type": "array",
-            "description": "The url or filepath to the final function run on the source file",
+            "description": "An array of sinks to apply to the data after the filters have been applied",
             "items":{
                 "properties": {
                     "func": {
@@ -86,9 +86,9 @@
                         }
                     }
                 },
-                "sink": {
+                "sinks": {
                     "type": "array",
-                    "description": "The url or filepath to the final function run on the source file",
+                    "description": "An array of sinks to apply to the data after the filters have been applied",
                     "items":{
                         "properties": {
                             "func": {

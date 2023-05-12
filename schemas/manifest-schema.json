@@ -9,7 +9,7 @@
             "type": "array",
                     "description": "An array of filters to apply to the source file",
                     "items":{
-                        "required": ["func", "params"],
+                        "required": ["func"],
                         "properties": {
                             "func": {
                                 "type": "string",
@@ -73,7 +73,7 @@
                     "type": "array",
                     "description": "An array of filters to apply to the source file",
                     "items":{
-                        "required": ["func", "params"],
+                        "required": ["func"],
                         "properties": {
                             "func": {
                                 "type": "string",

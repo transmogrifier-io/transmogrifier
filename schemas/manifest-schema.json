@@ -3,8 +3,41 @@
     "title": "Transmogrifiers Manifest Schema",
     "description": "Schema for the transmogrifiers manifest file",
     "type": "object",
-    "required" :["schema", "entries"],
+    "required" :["schema", "entries", "filters"],
     "properties": {
+        "filters":{
+            "type": "array",
+                    "description": "An array of filters to apply to the source file",
+                    "items":{
+                        "required": ["func", "params"],
+                        "properties": {
+                            "func": {
+                                "type": "string",
+                                "description": "The function to be applied to the source file contents"
+                            },
+                            "params": {
+                                "type": "object",
+                                "description": "Key value pairs of parameters to pass to the filter function"
+                            }
+                        }
+                    }
+        },
+        "sink": {
+            "type": "array",
+            "description": "The url or filepath to the final function run on the source file",
+            "items":{
+                "properties": {
+                    "func": {
+                        "type": "string",
+                        "description": "The url or filepath to the sink function"
+                    },
+                    "params": {
+                        "type": "object",
+                        "description": "The parameters that will be passed to the sink function"
+                    }
+                }
+            }
+        },
         "schema": {
             "type": "string",
             "description": "The url or filepath to the schema ???"
@@ -26,7 +59,7 @@
                         },
                         "params": {
                             "type": "object",
-                            "description": "",
+                            "description": "The parameters that will be passed to the source function",
                             "properties":{
                                 "path": {
                                     "type": "string",
@@ -54,16 +87,18 @@
                     }
                 },
                 "sink": {
-                    "type": "object",
+                    "type": "array",
                     "description": "The url or filepath to the final function run on the source file",
-                    "properties": {
-                        "func": {
-                            "type": "string",
-                            "description": "The url or filepath to the sink function"
-                        },
-                        "params": {
-                            "type": "object",
-                            "description": ""
+                    "items":{
+                        "properties": {
+                            "func": {
+                                "type": "string",
+                                "description": "The url or filepath to the sink function"
+                            },
+                            "params": {
+                                "type": "object",
+                                "description": "The parameters that will be passed to the sink function"
+                            }
                         }
                     }
                 }

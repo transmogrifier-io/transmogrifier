@@ -4,10 +4,11 @@
 - Extracting the function from the url
 
 ## What's not working (yet)
-- Passing the function parameters
-- Extracting the parameters from the library
 - Writing to a file
+- Writing to a URL
 - Validator function
+- Reading sinks from URL
+- Reading sources from URL
 
 ## Setup
 You would need to create a new project to run the new transmongrifier.dart file.

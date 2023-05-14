@@ -3,11 +3,6 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_js/flutter_js.dart';
-// http and https
-// ajv
-
-/// To count the number of times a function is called
-int count = 0;
 
 final JavascriptRuntime jsRuntime = getJavascriptRuntime();
 
@@ -39,11 +34,13 @@ Future<void> writeFile(String filePath, dynamic data) async {
 
 Future<void> writeURL(String url, dynamic data) async {
   // should write data to a url
-  var postURL = Uri.https(url, '');
-  var response = await http.post(postURL, body: data);
+  Uri postURL = Uri.parse(url);
+  Map<String, String> headers = {'Content-Type': 'application/json; charset=UTF-8'};
 
-  JsEvalResult result = jsRuntime.evaluate('response.body');
-  return result.rawResult;
+  http.Response resp = await http.post(postURL,headers: headers, body: jsonEncode(data));
+  if (resp.statusCode != 200) {
+    throw 'Failed to post data "${postURL.host + postURL.path}": HTTP status code ${resp.statusCode}';
+  }
 }
 
 Map sources = {
@@ -69,6 +66,7 @@ Map filters = {
 
 Map sinks = {
   'null': (Map params, dynamic data) async {
+    print(data);
     return;
   },
   'file_write': (Map params, dynamic data) async {
@@ -81,12 +79,14 @@ Map sinks = {
 
 dynamic runJSFilter(dynamic data) async {
   JsEvalResult filterResult = jsRuntime.evaluate("""JSON.stringify(filter(${jsonEncode(data)}, params), null);""");
+  if (filterResult.isError) {
+    throw 'running filter failed with:\n ${filterResult.rawResult}';
+  }
   
   return jsonDecode(filterResult.toString());
 }
 
-// data comes in as a string, leaves as a Map (I think types could be messed up here)
-Future<dynamic> runPipelineEntry(Function sourceFunc, Map sourceParams, List filters, Function sinkFunc, Map sinkParams, String schema) async {
+Future<dynamic> runPipelineEntry(Function sourceFunc, Map sourceParams, List filters, List sinks, String schema) async {
   dynamic data = await sourceFunc(sourceParams);
 
   for (Map filter in filters) {
@@ -99,11 +99,16 @@ Future<dynamic> runPipelineEntry(Function sourceFunc, Map sourceParams, List fil
       data = await runJSFilter(data);
     }
   }
-  await sinkFunc(sinkParams, data);
+
+  for (Map sink in sinks) {
+    Function sinkFunc = await getSinkFunction(sink['func']);
+    Map sinkParams = sink['params'] ?? {};
+    await sinkFunc(sinkParams, data);
+  }
   return data;
 }
 
-Future<dynamic> runPipelineSchemaEntry(dynamic data, List filters, Function sinkFunc, Map sinkParams, String schema) async {
+Future<dynamic> runPipelineSchemaEntry(dynamic data, List filters, List sinks, String schema) async {
   for (Map filter in filters) {
     dynamic filterFunc = await getFilterFunction(filter['func']);
     Map filterParams = await getFilterParameters(filter['params'] ?? {});
@@ -115,7 +120,11 @@ Future<dynamic> runPipelineSchemaEntry(dynamic data, List filters, Function sink
     }
   }
 
-  await sinkFunc(sinkParams, data);
+  for (Map sink in sinks) {
+    Function sinkFunc = await getSinkFunction(sink['func']);
+    Map sinkParams = sink['params'] ?? {};
+    await sinkFunc(sinkParams, data);
+  }
   return data;
 }
 
@@ -129,7 +138,10 @@ Future<dynamic> getFilterFunction(String name) async {
   if (name.startsWith('http://') || name.startsWith('https://')) {
     String filterStr = await readURL(name);
 
-    jsRuntime.evaluate("""var get = function() {$filterStr}; var filter = get();""");
+    JsEvalResult getResult = jsRuntime.evaluate("""var get = function() {$filterStr}; var filter = get();""");
+    if (getResult.isError) {
+      throw 'getting filter failed with:\n${getResult.toString()}';
+    }
     return filterStr;
 
   } else {
@@ -145,21 +157,57 @@ Future<Function> getSinkFunction(String name) async {
 
 Future<String> getSchema(String path) async {
   String schema = await readURLOrFile(path);
-  jsRuntime.evaluate("""var schema = $schema;""");
+  JsEvalResult getSchema = jsRuntime.evaluate("""var schema = ${jsonEncode(schema)};""");
+  if (getSchema.isError) {
+    throw 'getting schema failed with:\n${getSchema.rawResult}';
+  }
+
   return schema;
 }
 
+Future<void> loadAJV(String path) async {
+  JsEvalResult ajvLoaded = jsRuntime.evaluate("""var ajvIsLoaded = (typeof ajv == 'undefined') ? "0" : "1"; ajvIsLoaded;""");
+  if (ajvLoaded.isError) {
+    throw 'checking if ajv is loaded failed with:\n${ajvLoaded.rawResult}';
+  } else if (ajvLoaded.toString() == "0") {
+    String ajvJS = await rootBundle.loadString(path);
+    JsEvalResult loadAJV = jsRuntime.evaluate(ajvJS);
+    if (loadAJV.isError) {
+      throw 'loading avj validator failed with:\n${loadAJV.rawResult}';
+    }
+    JsEvalResult createAJV = jsRuntime.evaluate("""var ajv = new Ajv({ allErrors: true });""");
+    if (createAJV.isError) {
+      throw 'creating ajv validator failed with:\n${createAJV.rawResult}';
+    }
+  }
+}
+
 Future<Map> getFilterParameters(Map params) async {
-  jsRuntime.evaluate("""var params = {};""");
+  JsEvalResult setParams = jsRuntime.evaluate("""var params = ${jsonEncode(params)};""");
+  if (setParams.isError) {
+    throw 'getting params failed with:\n${setParams.rawResult}';
+  }
   
+  JsEvalResult setSchema = jsRuntime.evaluate("""params.schema = schema;""");
+  if (setSchema.isError) {
+    throw 'setting schema failed with:\n${setSchema.rawResult}';
+  }
+
   if (params['validator'] == 'json') {
-    // some validator
+    await loadAJV("assets/ajv.js");
+    JsEvalResult setAJV = jsRuntime.evaluate("""params.ajv = ajv""");
+    if (setAJV.isError) {
+      throw 'setting ajv validator failed with:\n${setAJV.rawResult}';
+    }
   }
 
   if (params.containsKey('library')) {
     String library = await readURLOrFile(params['library']);
     params['library'] = library;
-    jsRuntime.evaluate("""var get = function() {$library}; params.library = get();""");
+    JsEvalResult setLibrary = jsRuntime.evaluate("""var get = function() {$library}; params.library = get();""");
+    if (setLibrary.isError) {
+      throw 'setting library failed with:\n${setLibrary.rawResult}';
+    }
   }
 
   return params;
@@ -168,23 +216,21 @@ Future<Map> getFilterParameters(Map params) async {
 Future<dynamic> transmogrifyEntry(Map entry, String schemaPath) async {
   Map source = entry['source'];
   List filters = entry['filters'];
-  Map sink = entry['sink'] ?? {'func': 'null', 'params': {}};
+  List sinks = entry['sinks'] ?? [];
 
   String schema = await getSchema(schemaPath);
   Function sourceFunc = await getSourceFunction(source['func']);
-  Function sinkFunc = await getSinkFunction(sink['func']);
 
-  return runPipelineEntry(sourceFunc, source["params"], filters, sinkFunc, sink['params'], schema);
+  return runPipelineEntry(sourceFunc, source["params"], filters, sinks, schema);
 }
 
 Future<dynamic> transmogrifySchemaEntry(List data, Map schemaEntry) async {
   List filters = schemaEntry['filters'] ?? [];
-  Map sink = schemaEntry['sink'] ?? {'func': 'null', 'params': {}};
+  List sinks = schemaEntry['sinks'] ?? [];
 
   String schema = await getSchema(schemaEntry['schema']);
-  Function sinkFunc = await getSinkFunction(sink['func']);
 
-  return runPipelineSchemaEntry(data, filters, sinkFunc, sink['params'], schema);
+  return runPipelineSchemaEntry(data, filters, sinks, schema);
 }
 
 Future<List> transmogrify(List manifest) async {
@@ -202,13 +248,13 @@ Future<List> transmogrify(List manifest) async {
   return schemaEntryDatas;
 }
 
-Future<List> main() async {
-  // File manifest_file = File("assets\\van-texas-manifest.json");
-  String manifest_string = await rootBundle.loadString("assets/van-texas-manifest.json");
-  // print('Manifest: $manifest_string');
-  // String manifest_string = await manifest_file.readAsString();
-  List manifest = jsonDecode(manifest_string);
+// example usage
 
-  List data = await transmogrify(manifest);
-  return data;
-}
+// Future<List> main() async {
+//   String manifest_string = await rootBundle.loadString("assets/van-texas-manifest.json");
+
+//   List manifest = jsonDecode(manifest_string);
+
+//   List data = await transmogrify(manifest);
+//   return data;
+// }

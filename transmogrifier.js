@@ -473,7 +473,7 @@ const filters =
     },
     to_lower: async function (data, params) {
         return data.toLowerCase()
-    }
+    },
 };
 
 const sinks =
@@ -568,6 +568,9 @@ async function getSinkFunction(name) {
 }
 
 async function getSchema(path) {
+    if (!path) {
+        return "";
+    }
     const schema = await readURLOrFile(path);
     return schema;
 }
@@ -601,7 +604,7 @@ async function transmogrifySchemaEntry(data, schemaEntry) {
     const filters = schemaEntry.filters ? schemaEntry.filters : [];
     const sinks = schemaEntry.sinks ? schemaEntry.sinks : []; 
 
-    const schema = await getSchema(schemaEntry.schema);;
+    const schema = await getSchema(schemaEntry.schema);
 
     return runPipelineSchemaEntry(data, filters, sinks, schema)
 }
@@ -610,6 +613,7 @@ async function transmogrify(manifest) {
     const schemaEntryDatas = [];
     for (schemaEntry of manifest) {
         const entryDatas = [];
+        schemaEntry.schema = schemaEntry.schema ? schemaEntry.schema : "";
         for (entry of schemaEntry.entries) {
             let entryData = await transmogrifyEntry(entry, schemaEntry.schema);
             entryDatas.push(entryData);

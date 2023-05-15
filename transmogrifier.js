@@ -489,7 +489,7 @@ const sinks =
     }
 };
 
-async function runPipelineEntry(sourceFunc, sourceParams, filters, sinkFunc, sinkParams, schema) {
+async function runPipelineEntry(sourceFunc, sourceParams, filters, sinks, schema) {
     let data = await sourceFunc(sourceParams);
 
     for (const filter of filters) {
@@ -498,18 +498,28 @@ async function runPipelineEntry(sourceFunc, sourceParams, filters, sinkFunc, sin
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
     }
-    await sinkFunc(sinkParams, data);
+    
+    for (const sink of sinks) {
+        const sinkFunc = await getSinkFunction(sink.func);
+        const sinkParams = sink.params ? sink.params : {};
+        await sinkFunc(sinkParams, data);
+    }
     return data;
 }
 
-async function runPipelineSchemaEntry(data, filters, sinkFunc, sinkParams, schema) {
+async function runPipelineSchemaEntry(data, filters, sinks, schema) {
     for (const filter of filters) {
         const filterFunc = await getFilterFunction(filter.func);
         const filterParams = await getFilterParameters(filter.params ? filter.params : {});
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
     }
-    await sinkFunc(sinkParams, data);
+    
+    for (const sink of sinks) {
+        const sinkFunc = await getSinkFunction(sink.func);
+        const sinkParams = sink.params ? sink.params : {};
+        await sinkFunc(sinkParams, data);
+    }
     return data;
 }
 
@@ -565,7 +575,7 @@ async function getSchema(path) {
 async function getFilterParameters(params) {
     if (params["validator"] === "json") {
         const validator = require('jsonschema').Validator;
-        params["JSON-validator"] = new validator();
+        params["jsonschema"] = new validator();
     }
 
     if (params["library"]) {
@@ -579,23 +589,21 @@ async function getFilterParameters(params) {
 async function transmogrifyEntry(entry, schema_path) {
     const source = entry.source;
     const filters = entry.filters;
-    const sink = entry.sink ? entry.sink : { func: "null", params: {} };
+    const sinks = entry.sinks ? entry.sinks : [];
 
     const schema = await getSchema(schema_path);
     const sourceFunc = await getSourceFunction(source.func);
-    const sinkFunc = await getSinkFunction(sink.func);
 
-    return runPipelineEntry(sourceFunc, source.params, filters, sinkFunc, sink.params, schema)
+    return runPipelineEntry(sourceFunc, source.params, filters, sinks, schema)
 }
 
 async function transmogrifySchemaEntry(data, schemaEntry) {
     const filters = schemaEntry.filters ? schemaEntry.filters : [];
-    const sink = schemaEntry.sink ? schemaEntry.sink : { func: "null", params: {} };
+    const sinks = schemaEntry.sinks ? schemaEntry.sinks : []; 
 
-    const schema = await getSchema(schemaEntry.schema);
-    const sinkFunc = await getSinkFunction(sink.func);
+    const schema = await getSchema(schemaEntry.schema);;
 
-    return runPipelineSchemaEntry(data, filters, sinkFunc, sink.params, schema)
+    return runPipelineSchemaEntry(data, filters, sinks, schema)
 }
 
 async function transmogrify(manifest) {

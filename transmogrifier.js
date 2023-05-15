@@ -473,7 +473,7 @@ const filters =
     },
     to_lower: async function (data, params) {
         return data.toLowerCase()
-    },
+    }
 };
 
 const sinks =

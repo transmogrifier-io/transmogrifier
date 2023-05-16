@@ -13,7 +13,7 @@ Future<dynamic> readFile(String filePath) {
 
 Future<dynamic> readURL(String uri_string) async {
   Uri uri = Uri.parse(uri_string);
-  var response = await http.get(Uri.http(uri.authority, uri.path));
+  var response = await http.get(uri);
   return response.body;
 }
 
@@ -33,7 +33,6 @@ Future<void> writeFile(String filePath, dynamic data) async {
 }
 
 Future<void> writeURL(String url, dynamic data) async {
-  // should write data to a url
   Uri postURL = Uri.parse(url);
   Map<String, String> headers = {'Content-Type': 'application/json; charset=UTF-8'};
 
@@ -66,7 +65,6 @@ Map filters = {
 
 Map sinks = {
   'null': (Map params, dynamic data) async {
-    print(data);
     return;
   },
   'file_write': (Map params, dynamic data) async {
@@ -78,7 +76,9 @@ Map sinks = {
 };
 
 dynamic runJSFilter(dynamic data) async {
+  String evaluation = """JSON.stringify(filter(${jsonEncode(data)}, params), null);""";
   JsEvalResult filterResult = jsRuntime.evaluate("""JSON.stringify(filter(${jsonEncode(data)}, params), null);""");
+
   if (filterResult.isError) {
     throw 'running filter failed with:\n ${filterResult.rawResult}';
   }
@@ -157,7 +157,7 @@ Future<Function> getSinkFunction(String name) async {
 
 Future<String> getSchema(String path) async {
   String schema = await readURLOrFile(path);
-  JsEvalResult getSchema = jsRuntime.evaluate("""var schema = ${jsonEncode(schema)};""");
+  JsEvalResult getSchema = jsRuntime.evaluate("""var schema = `$schema`;""");
   if (getSchema.isError) {
     throw 'getting schema failed with:\n${getSchema.rawResult}';
   }

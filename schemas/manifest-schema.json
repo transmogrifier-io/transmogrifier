@@ -1,5 +1,5 @@
 {
-    "$schema": "https://json-schema.org/draft-07/schema",
+    "$schema": "http://json-schema.org/draft-07/schema",
     "title": "Transmogrifiers Manifest Schema",
     "description": "Schema for the transmogrifiers manifest file",
     "type": "object",

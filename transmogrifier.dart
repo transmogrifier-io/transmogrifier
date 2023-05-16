@@ -76,7 +76,6 @@ Map sinks = {
 };
 
 dynamic runJSFilter(dynamic data) async {
-  String evaluation = """JSON.stringify(filter(${jsonEncode(data)}, params), null);""";
   JsEvalResult filterResult = jsRuntime.evaluate("""JSON.stringify(filter(${jsonEncode(data)}, params), null);""");
 
   if (filterResult.isError) {

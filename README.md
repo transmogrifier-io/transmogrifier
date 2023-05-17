@@ -1,7 +1,4 @@
 # Transmogrifier
-The Transmogrifier is a Data Processing Pipeline, which takes data from multiple sources, processes it through a series of filters, then outputs to any number of sinks. The output can then be grouped and filtered as a whole 
-The Transmogrifier is a Data Processing Pipeline, which takes data from multiple sources, processes it through a series of filters, and outputs it to any number of sinks. The filters can be highly customized to fit any given data standard or requirement and the sinks can be configured to output to a file or upload to a database. 
-
 The Transmogrifier is a Data Processing Pipeline, which allows for conformation of external data to standardized schemae. It can take data from multiple sources, process it through a series of data source-specific and broad-level filters, then output the transformed data to any number of sinks (individual or grouped datasets).
 
 The filters can be highly customized to fit any given data standard or requirement and the sinks can be configured to output to a file or upload to a database. 
@@ -11,24 +8,43 @@ The filters can be highly customized to fit any given data standard or requireme
 Transmogrifier is a tool that automates the process of data extraction, transformation, and loading. The Transmogrifier supports extracting data from diverse sources, allows for multiple transformations, and facilitates loading the transformed data to various target destinations.
 
 # Manifest
-The manifest is the JSON file that defines the standardized schemae, data sources, filters, and sink(s). 
+The manifest is the JSON file that defines the standardized schemae, data sources, filters, and sink(s). At the top level, it is an array of objects. Each object contains the following properties:
+- a schema
+- a top-level array of filters
+- a top-level array of sinks (optional)
+- an array of entries
+Within the array of entries, each object contains the following properties:
+- a source
+- an array of filters
+- an array of sinks (optional)
 
 ## Features
 The Transmogrifier pipeline is outlined as the following: 
 +schema
-+filters (broad-level)
++filters (broad-level) 
 +sinks
-### Sources
-The Source object defines the function needed to get the data as well as any parameters required. For example, the function "url_read" requires a url parameter to define the location of the data.
++entries
 
 ### Filters
 The Filters array defines multiple objects that contain the function needed to transform the data as well as any parameters required. For example, the function "public_art_json_to_json" requires a library parameter to define the location of the library of functions needed to transform the data.
+The order that the filters are defined is the order the the data will pass through. For example, in the manifest below, the validator filter is run before the stringify filter.
 
 ### Sinks
 The Sinks array defines multiple objects that contain the function needed to output the data as well as any parameters required. For example, the function "file_write" requires a path parameter to define the location of the output file.
 
 
+### Entries
+An entry is an object that defines the source, the filters and the sink for each particular dataset. 
+#### Sources
+The Source object defines the function needed to get the data as well as any parameters required. For example, the function "url_read" requires a url parameter to define the location of the data.
+#### Filters
+See section [above](###Filters).
+#### Sinks
+See section [above](###Sinks).
+
+
 ## How to Write a Manifest
+should we add a template manifest here?
 
 ## Example
 ```json

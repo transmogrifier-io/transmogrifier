@@ -155,6 +155,9 @@ Future<Function> getSinkFunction(String name) async {
 }
 
 Future<String> getSchema(String path) async {
+  if (path == "") {
+    return "";
+  }
   String schema = await readURLOrFile(path);
   JsEvalResult getSchema = jsRuntime.evaluate("""var schema = `$schema`;""");
   if (getSchema.isError) {
@@ -227,7 +230,7 @@ Future<dynamic> transmogrifySchemaEntry(List data, Map schemaEntry) async {
   List filters = schemaEntry['filters'] ?? [];
   List sinks = schemaEntry['sinks'] ?? [];
 
-  String schema = await getSchema(schemaEntry['schema']);
+  String schema = await getSchema(schemaEntry['schema'] ?? "");
 
   return runPipelineSchemaEntry(data, filters, sinks, schema);
 }
@@ -237,7 +240,7 @@ Future<List> transmogrify(List manifest) async {
   for (Map schemaEntry in manifest) {
     List entryDatas = [];
     for (Map entry in schemaEntry['entries']) {
-      dynamic entryData = await transmogrifyEntry(entry, schemaEntry['schema']);
+      dynamic entryData = await transmogrifyEntry(entry, schemaEntry['schema'] ?? "");
       entryDatas.add(entryData);
     }
     dynamic schemaEntryData = await transmogrifySchemaEntry(entryDatas, schemaEntry);

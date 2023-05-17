@@ -28,6 +28,7 @@ The Transmogrifier pipeline is outlined as the following:
 ### Filters
 The Filters array defines multiple objects that contain the function needed to transform the data as well as any parameters required. For example, the function "public_art_json_to_json" requires a library parameter to define the location of the library of functions needed to transform the data.
 The order that the filters are defined is the order the the data will pass through. For example, in the manifest below, the validator filter is run before the stringify filter.
+[Here] (https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/filters/validate.js) is an example of a filter.
 
 ### Sinks
 The Sinks array defines multiple objects that contain the function needed to output the data as well as any parameters required. For example, the function "file_write" requires a path parameter to define the location of the output file.
@@ -35,18 +36,18 @@ The Sinks array defines multiple objects that contain the function needed to out
 
 ### Entries
 An entry is an object that defines the source, the filters and the sink for each particular dataset. 
-#### Sources
+⋅⋅⋅
+#### -Sources
 The Source object defines the function needed to get the data as well as any parameters required. For example, the function "url_read" requires a url parameter to define the location of the data.
-#### Filters
-See section [above](#Filters).
-#### Sinks
-See section [above](###Sinks).
+⋅⋅⋅Filters
+    See section [above](#Filters).
+#### -Sinks
+See section [above](#Sinks).
 
 
 ## How to Write a Manifest
-should we add a template manifest here?
-
-## Example
+Below is an example of how a manifest should be written.
+### Example
 ```json
 [
   {
@@ -140,4 +141,23 @@ should we add a template manifest here?
 ]
 ```
 
+### How to Run a Manifest with the Transmogrifier
+
+To run the transmogrifier, you need an executor file, such as this [example](https://github.com/transmogrifier-io/transmogrifier/blob/dev/example-main.js). 
+The example transmogrifier takes the manifest as a command line argument, so to initiate execution with node, for example, you will run the following command:
+(assuming you are in the same directory as the example-main.js) 
+`node example-main.js my_manifest.json` 
+
+# Implementations
+This repository includes implementations for the transmogrifier in both Javascript and Dart.
+
 # Limitations
+
+## Javascript implementation limitations
+The Javascript implementation uses node.js for some of its functionality, applications that are developed using flutter will
+not be able to use this implementation. The Dart implementation should be used if this is the case.
+
+## Dart implementation limitations
+
+
+

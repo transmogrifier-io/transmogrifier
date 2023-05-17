@@ -19,10 +19,13 @@ The Transmogrifier pipeline is outlined as the following:
 +filters (broad-level)
 +sinks
 ### Sources
+The Source object defines the function needed to get the data as well as any parameters required. For example, the function "url_read" requires a url parameter to define the location of the data.
 
 ### Filters
+The Filters array defines multiple objects that contain the function needed to transform the data as well as any parameters required. For example, the function "public_art_json_to_json" requires a library parameter to define the location of the library of functions needed to transform the data.
 
 ### Sinks
+The Sinks array defines multiple objects that contain the function needed to output the data as well as any parameters required. For example, the function "file_write" requires a path parameter to define the location of the output file.
 
 
 ## How to Write a Manifest

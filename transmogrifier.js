@@ -494,14 +494,14 @@ async function runPipelineEntry(sourceFunc, sourceParams, filters, sinks, schema
 
     for (const filter of filters) {
         const filterFunc = await getFilterFunction(filter.func);
-        const filterParams = await getFilterParameters(filter.params ? filter.params : {});
+        const filterParams = await getFilterParameters(filter.params ?? {});
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
     }
     
     for (const sink of sinks) {
         const sinkFunc = await getSinkFunction(sink.func);
-        const sinkParams = sink.params ? sink.params : {};
+        const sinkParams = sink.params ?? {};
         await sinkFunc(sinkParams, data);
     }
     return data;
@@ -510,14 +510,14 @@ async function runPipelineEntry(sourceFunc, sourceParams, filters, sinks, schema
 async function runPipelineSchemaEntry(data, filters, sinks, schema) {
     for (const filter of filters) {
         const filterFunc = await getFilterFunction(filter.func);
-        const filterParams = await getFilterParameters(filter.params ? filter.params : {});
+        const filterParams = await getFilterParameters(filter.params ?? {});
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
     }
     
     for (const sink of sinks) {
         const sinkFunc = await getSinkFunction(sink.func);
-        const sinkParams = sink.params ? sink.params : {};
+        const sinkParams = sink.params ?? {};
         await sinkFunc(sinkParams, data);
     }
     return data;
@@ -592,7 +592,7 @@ async function getFilterParameters(params) {
 async function transmogrifyEntry(entry, schema_path) {
     const source = entry.source;
     const filters = entry.filters;
-    const sinks = entry.sinks ? entry.sinks : [];
+    const sinks = entry.sinks ?? [];
 
     const schema = await getSchema(schema_path);
     const sourceFunc = await getSourceFunction(source.func);
@@ -601,8 +601,8 @@ async function transmogrifyEntry(entry, schema_path) {
 }
 
 async function transmogrifySchemaEntry(data, schemaEntry) {
-    const filters = schemaEntry.filters ? schemaEntry.filters : [];
-    const sinks = schemaEntry.sinks ? schemaEntry.sinks : []; 
+    const filters = schemaEntry.filters ?? [];
+    const sinks = schemaEntry.sinks ?? []; 
 
     const schema = await getSchema(schemaEntry.schema);
 
@@ -613,7 +613,7 @@ async function transmogrify(manifest) {
     const schemaEntryDatas = [];
     for (schemaEntry of manifest) {
         const entryDatas = [];
-        schemaEntry.schema = schemaEntry.schema ? schemaEntry.schema : "";
+        schemaEntry.schema = schemaEntry.schema ?? "";
         for (entry of schemaEntry.entries) {
             let entryData = await transmogrifyEntry(entry, schemaEntry.schema);
             entryDatas.push(entryData);

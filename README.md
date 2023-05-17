@@ -1,5 +1,5 @@
 # Transmogrifier
-The Transmogrifier is a Data Processing Pipeline, which allows for conformation of external data to standardized schemae. It can take data from multiple sources, process it through a series of data source-specific and broad-level filters, then output the transformed data to any number of sinks (individual or grouped datasets).
+The Transmogrifier is a Data Processing Pipeline, which allows for conformation of external data to standardized schemae. It can take data from multiple sources, process it through a series of dataset-specific and broad-level filters, then output the transformed data to any number of sinks (individual or grouped datasets).
 
 The filters can be highly customized to fit any given data standard or requirement and the sinks can be configured to output to a file or upload to a database. 
 
@@ -8,7 +8,7 @@ The filters can be highly customized to fit any given data standard or requireme
 Transmogrifier is a tool that automates the process of data extraction, transformation, and loading. The Transmogrifier supports extracting data from diverse sources, allows for multiple transformations, and facilitates loading the transformed data to various target destinations.
 
 # Manifest
-The manifest is the JSON file that defines the standardized schemae, data sources, filters, and sink(s). At the top level, it is an array of objects. Each object contains the following properties:
+The manifest is the JSON file that defines the standardized schemae, data sources (datasets), filters, and sink(s). At the top level, it is an array of objects. Each object contains the following properties:
 - a schema
 - a top-level array of filters
 - a top-level array of sinks (optional)
@@ -26,25 +26,30 @@ The Transmogrifier pipeline is outlined as the following:
 +entries
 
 ### Filters (broad-level)
-The Filters array defines multiple objects that contain the function needed to transform the data as well as any parameters required. For example, the function "public_art_json_to_json" requires a library parameter to define the location of the library of functions needed to transform the data.
+These filters are broad-level filters that will be applied to all of the modified data that comes out of the dataset-specific filters.
+
+The `filters` array defines multiple objects that contain the function needed to transform the data as well as any parameters required. For example, the function "public_art_json_to_json" requires a library parameter to define the location of the library of functions needed to transform the data.
 
 The order that the filters are defined is the order the the data will pass through. For example, in the manifest below, the validator filter is run before the stringify filter.
 
 [Here] (https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/filters/validate.js) is an example of a filter.
 
-### Sinks
-The Sinks array defines multiple objects that contain the function needed to output the data as well as any parameters required. For example, the function "file_write" requires a path parameter to define the location of the output file.
+### Sinks (broad-level)
+The `sinks` array defines multiple objects that contain the function needed to output the data as well as any parameters required. For example, the function "file_write" requires a path parameter to define the location of the output file.
+
+The broad-level sinks output all of the data into a final destination?
 
 
 ### Entries
-An entry is an object that defines the source, the filters and the sink for each particular dataset. 
+An entry is an object that defines the `source`, the `filters` and the `sink` for each particular dataset. 
 - Sources
 
-   The Source object defines the function needed to get the data as well as any parameters required. For example, the function "url_read" requires a url parameter to define the location of the data.
-- Filters (data source-specific)
+   The `source` object defines the function needed to get the data as well as any parameters required. For example, the function "url_read" requires a url parameter to define the location of the data.
+- Filters (dataset-specific)
 
-   See section [above](#Filters).
-- Sinks
+   These filters are specific to the dataset you will be transforming. For the overall details, you can see the section [above](#Filters).
+- Sinks (dataset-specific)
+  
 
    See section [above](#Sinks).
 
@@ -156,12 +161,13 @@ The example transmogrifier takes the manifest as a command line argument, so to 
 This repository includes implementations for the transmogrifier in both Javascript and Dart.
 
 # Limitations
+The following sections cover any limitations that the different transmogrifier implemenations may have.
 
 ## Javascript implementation limitations
 The Javascript implementation uses node.js for some of its functionality, applications that are developed using flutter will
 not be able to use this implementation. The Dart implementation should be used if this is the case.
 
 ## Dart implementation limitations
-
+The Dart implementation currently does not support source/sink functions from a URL, only from a local path.
 
 

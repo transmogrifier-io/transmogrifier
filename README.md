@@ -20,15 +20,25 @@ Within each entry, each object contains the following properties:
 
 ## Features
 The Transmogrifier pipeline is outlined as the following: 
-+schema
-+filters (broad-level) 
-+sinks
-+entries
+- schema
+- filters (broad-level) 
+- sinks
+- entries
+
+The functions `func` can either be referenced as built-in functions (from `transmogrifier.js`) or a URL to an external function. (**NOTE**: The Dart implementation does not currently support external functions).
+
+The source built-in functions include (but might not be limited to) the following:
+- `url_read` - reads data from a URL. Accepts the URL in the params.path attribute.
+- `file_read` - reads data from a file. Accepts the file path in the params.path attribute.
+
+The sink built-in functions include (but might not be limited to) the following:
+- `url_write` - writes data to a URL. Accepts the URL in the params.path attribute.
+- `file_write` - writes data to a file. Accepts the file path in the params.path attribute.
 
 ### Filters (broad-level)
 These filters are broad-level filters that will be applied to all of the modified data that comes out of the dataset-specific filters.
 
-The `filters` array defines multiple objects that contain the filter needed to transform the data as well as any parameters required. For example, the filter "public_art_json_to_json" requires a library parameter to define the location of the library of filters needed to transform the data.
+The `filters` array defines multiple objects that contain the filter needed to transform the data as well as any parameters required. For example, the filter "public_art_json_to_json" requires a library parameter to define the location of the library of functions needed to transform the data.
 
 The order that the filters are defined is the order the the data will pass through. For example, in the manifest below, the validator filter is run before the stringify filter.
 
@@ -41,7 +51,7 @@ The broad-level sinks output all of the data into final destinations.
 
 
 ### Entries
-An entry is an object that defines the `source` to read data from, the `filters` to apply to the data and the `sink` that define where to write the filtered data for each particular dataset. 
+An entry is an object that defines the `source` to read data from, the `filters` to apply to the data and the `sinks` that define where to write the filtered data for each particular dataset. 
 - Sources
 
    The `source` object defines the function needed to get the data as well as any parameters required. For example, the function "url_read" requires a path parameter to define the location of the data.

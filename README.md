@@ -1,7 +1,7 @@
 # Transmogrifier
 The Transmogrifier is a Data Processing Pipeline, which allows for conformation of external data to standardized schemae. It can take data from multiple sources, process it through a series of dataset-specific and broad-level filters, then output the transformed data to any number of sinks (individual or grouped datasets).
 
-The filters can be highly customized to fit any given data standard or requirement and the sinks can be configured to output to a file or upload to a database. 
+The filters can be highly customized to fit any given data standard or requirement and the sinks can be configured to output to a file, upload to a database, or write to a URL. 
 
 
 # Purpose
@@ -13,7 +13,7 @@ The manifest is the JSON file that defines the standardized schemae, data source
 - a top-level array of filters
 - a top-level array of sinks (optional)
 - an array of entries
-Within the array of entries, each object contains the following properties:
+Within each entry, each object contains the following properties:
 - a source
 - an array of filters
 - an array of sinks (optional)
@@ -28,7 +28,7 @@ The Transmogrifier pipeline is outlined as the following:
 ### Filters (broad-level)
 These filters are broad-level filters that will be applied to all of the modified data that comes out of the dataset-specific filters.
 
-The `filters` array defines multiple objects that contain the function needed to transform the data as well as any parameters required. For example, the function "public_art_json_to_json" requires a library parameter to define the location of the library of functions needed to transform the data.
+The `filters` array defines multiple objects that contain the filter needed to transform the data as well as any parameters required. For example, the filter "public_art_json_to_json" requires a library parameter to define the location of the library of filters needed to transform the data.
 
 The order that the filters are defined is the order the the data will pass through. For example, in the manifest below, the validator filter is run before the stringify filter.
 
@@ -37,17 +37,17 @@ The order that the filters are defined is the order the the data will pass throu
 ### Sinks (broad-level)
 The `sinks` array defines multiple objects that contain the function needed to output the data as well as any parameters required. For example, the function "file_write" requires a path parameter to define the location of the output file.
 
-The broad-level sinks output all of the data into a final destination?
+The broad-level sinks output all of the data into final destinations.
 
 
 ### Entries
-An entry is an object that defines the `source`, the `filters` and the `sink` for each particular dataset. 
+An entry is an object that defines the `source` to read data from, the `filters` to apply to the data and the `sink` that define where to write the filtered data for each particular dataset. 
 - Sources
 
-   The `source` object defines the function needed to get the data as well as any parameters required. For example, the function "url_read" requires a url parameter to define the location of the data.
+   The `source` object defines the function needed to get the data as well as any parameters required. For example, the function "url_read" requires a path parameter to define the location of the data.
 - Filters (dataset-specific)
 
-   These filters are specific to the dataset you will be transforming. For the overall details, you can see the section [above](#Filters).
+   These filters are specific to the `source` data you will be transforming. For the overall details, you can see the section [above](#Filters).
 - Sinks (dataset-specific)
   
 
@@ -153,6 +153,7 @@ Below is an example of how a manifest should be written.
 ### How to Run a Manifest with the Transmogrifier
 
 To run the transmogrifier, you need an executor file, such as this [example](https://github.com/transmogrifier-io/transmogrifier/blob/dev/example-main.js). 
+This file simply reads and parses the manifest and passes it to the transmogrify function defined in `transmogrifier.js`.
 The example transmogrifier takes the manifest as a command line argument, so to initiate execution with node, for example, you will run the following command:
 (assuming you are in the same directory as the example-main.js) 
 `node example-main.js my_manifest.json` 
@@ -168,6 +169,7 @@ The Javascript implementation uses node.js for some of its functionality, applic
 not be able to use this implementation. The Dart implementation should be used if this is the case.
 
 ## Dart implementation limitations
-The Dart implementation currently does not support source/sink functions from a URL, only from a local path.
+The Dart implementation currently only supports builtin source/sink functions. 
+If performing data validation, this [file] (https://github.com/abner/flutter_js/blob/master/example/assets/js/ajv.js) should be included in the assets folder of the flutter project.
 
 

@@ -13,6 +13,7 @@ The manifest is the JSON file that defines the standardized schemae, data source
 - a top-level array of filters
 - a top-level array of sinks (optional)
 - an array of entries
+
 Within each entry, each object contains the following properties:
 - a source
 - an array of filters

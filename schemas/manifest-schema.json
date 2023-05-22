@@ -1,0 +1,109 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "title": "Transmogrifiers Manifest Schema",
+    "description": "Schema for the transmogrifiers manifest file",
+    "type": "object",
+    "required" :["schema", "entries", "filters"],
+    "properties": {
+        "filters":{
+            "type": "array",
+                    "description": "An array of filters to apply to the source file",
+                    "items":{
+                        "required": ["func"],
+                        "properties": {
+                            "func": {
+                                "type": "string",
+                                "description": "The function to be applied to the source file contents"
+                            },
+                            "params": {
+                                "type": "object",
+                                "description": "Key value pairs of parameters to pass to the filter function"
+                            }
+                        }
+                    }
+        },
+        "sinks": {
+            "type": "array",
+            "description": "An array of sinks to apply to the data after the filters have been applied",
+            "items":{
+                "properties": {
+                    "func": {
+                        "type": "string",
+                        "description": "The url or filepath to the sink function"
+                    },
+                    "params": {
+                        "type": "object",
+                        "description": "The parameters that will be passed to the sink function"
+                    }
+                }
+            }
+        },
+        "schema": {
+            "type": "string",
+            "description": "The url or filepath to the schema ???"
+        },
+        "entries": {
+            "type": "array",
+            "description": "An array of entries",
+            "items":{
+                "type": "object",
+                "required": ["source", "filters"],
+            "properties": {
+                "source" : {
+                    "type": "object",
+                    "description": "The url or filepath to the source file",
+                    "properties": {
+                        "func": {
+                            "type": "string",
+                            "description": "The function to use to read the source file"
+                        },
+                        "params": {
+                            "type": "object",
+                            "description": "The parameters that will be passed to the source function",
+                            "properties":{
+                                "path": {
+                                    "type": "string",
+                                    "description": "The url or filepath to the function definition"
+                                }
+                            }
+                        }
+                        }
+                    },
+                "filters": {
+                    "type": "array",
+                    "description": "An array of filters to apply to the source file",
+                    "items":{
+                        "required": ["func"],
+                        "properties": {
+                            "func": {
+                                "type": "string",
+                                "description": "The function to be applied to the source file contents"
+                            },
+                            "params": {
+                                "type": "object",
+                                "description": "Key value pairs of parameters to pass to the filter function"
+                            }
+                        }
+                    }
+                },
+                "sinks": {
+                    "type": "array",
+                    "description": "An array of sinks to apply to the data after the filters have been applied",
+                    "items":{
+                        "properties": {
+                            "func": {
+                                "type": "string",
+                                "description": "The url or filepath to the sink function"
+                            },
+                            "params": {
+                                "type": "object",
+                                "description": "The parameters that will be passed to the sink function"
+                            }
+                        }
+                    }
+                }
+            }
+          }
+        }
+    }
+}

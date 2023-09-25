@@ -1,0 +1,43 @@
+[
+  {
+    
+    "schema": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/schemas/public-art.json",
+    "filters": [
+      {
+        "func": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/filters/canada/british-columbia/vancouver/public-art-json-to-json.js",
+        "params": {
+          "library": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/libraries/standard.js"
+        }
+      },
+      {
+        "func": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/filters/validate.js",
+        "params": {
+          "validator": "json"
+        }
+      },
+      {
+        "func": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/filters/stringify.js",
+        "params": {
+          "indent": true
+        }
+      }
+    ],
+    "entries": [
+      {
+        "source": {
+          "func": "file_read",
+          "params": {
+            "path": "/Users/sarah/Downloads/public-art.json"
+          }
+        },
+        "sink": {
+          "func": "file_write",
+          "params": {
+            "path": "./data.json",
+            "append": true
+          }
+        }
+      }
+    ]
+  }
+]

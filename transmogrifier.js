@@ -492,12 +492,16 @@ const sinks =
 async function runPipelineEntry(sourceFunc, sourceParams, filters, sinks, schema) {
     let data = await sourceFunc(sourceParams);
 
-    for (const filter of filters) {
-        const filterFunc = await getFilterFunction(filter.func);
-        const filterParams = await getFilterParameters(filter.params ?? {});
+    // parallelizes filtering
+    const filterPromises = filters.map(async (filter) => {
+        const filterFuncPromise = await getFilterFunction(filter.func);
+        const filterParamsPromise = await getFilterParameters(filter.params ?? {});
+        const [filterFunc, filterParams] = await Promise.all([filterFuncPromise, filterParamsPromise]);
         filterParams.schema = schema;
         data = await filterFunc(data, filterParams);
-    }
+    });
+
+    await Promise.all(filterPromises);
     
     for (const sink of sinks) {
         const sinkFunc = await getSinkFunction(sink.func);

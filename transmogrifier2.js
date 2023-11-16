@@ -10,6 +10,7 @@ class Transmogrifier {
             let schemaEntry = new SchemaEntry(schema.schema, schema.entries, schema.filters, schema.sinks);
             schemaList.push(schemaEntry);
         }
+        console.log(schemaList)
         return schemaList;
     }
     async transmogrify() {
@@ -55,15 +56,16 @@ class SchemaEntry {
 
 
     async runPipelineSchemaEntry() {
-        let temp = JSON.parse(this.transmogrifiedEntries)
-        let schema = temp.schema
+        // let temp = JSON.parse(this.transmogrifiedEntries)
+        // let schema = temp.schema
         
         console.log("running pipeline schema entry")
         let data = null;
         for (const filter of this.filters) {
             const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
             const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
-            filterParams.schema = await HelperFunctions.getSchema(schema);
+            filterParams.schema = await HelperFunctions.getSchema(this.schema);
+            console.log("PIPELINESCHEMAENTRY", filterFunc)
             data = await filterFunc(this.transmogrifiedEntries, filterParams);
         }
         for (const sink of this.sinks) {
@@ -96,7 +98,6 @@ class Entry {
                 const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
                 const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
                 filterParams.schema = this.schema;
-                
                 data = await filterFunc(data, filterParams);
             }
 
@@ -662,15 +663,15 @@ async function custom_filter (data, params) {
     let valid_data = [];
     let errors_list = [];
     
-    console.log(data)
     data.map(d => {
+        console.log(d.entries[0])
         switch (schemaType) {
             case "json": {
                 switch (validatorType) {
                     case "jsonschema": {
                         let result = validator.validate(d, schema, { required: true });
                         if (!result.valid) {
-                            // console.log(result)
+                            console.log(result)
                             errors_list.push({ type: "validate-json", validation_result: result, data_entry: d });
                         } else {
                             console.log("success")

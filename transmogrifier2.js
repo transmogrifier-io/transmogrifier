@@ -48,6 +48,7 @@ class SchemaEntry{
         for (const entry of this.entries){
             entryData.push(await entry.runPipelineEntry());
         }
+        console.log(entryData)
         this.transmogrifiedEntries = entryData;
     }
 
@@ -57,7 +58,7 @@ class SchemaEntry{
             const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
             const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
             filterParams.schema = this.schema;
-            console.log(filterFunc)
+            // console.log(this.transmogrifiedEntries)
             data = await filterFunc(this.transmogrifiedEntries, filterParams);
         }
     
@@ -79,22 +80,74 @@ class Entry{
         this.schema = schema;
     }
 
+    // async runPipelineEntry() {
+    //     console.log("running pipeline entry")
+    //     // let sourceFunc = await HelperFunctions.getSourceFunction(this.source.func);
+    //     let data =await HelperFunctions.getSourceFunction(this.source.func).then(
+    //         (value)=>{value(this.sourceParams).then(
+    //             (result)=>{
+    //                 data = result
+    //                 return result
+    //     })});
+    //     console.log(data)
+    //     // let data = await sourceFunc(this.sourceParams);
+    //     for (const filter of this.filters) {
+    //         await HelperFunctions.getFilterFunction(filter.func).then(
+    //             (filterFunc)=>{
+    //                 HelperFunctions.getFilterParameters(filter.params ?? {}).then(
+    //                     (filterParams)=>{
+    //                         filterParams.schema = this.schema;
+    //                         console.log(data)
+    //                         data = filterFunc(data, filterParams);
+    //                         console.log(data)
+    //                     })
+    //             }
+    //             );
+    //         const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
+    //         const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
+    //         filterParams.schema = schema;
+    //         filtered_data = await filterFunc(data, filterParams);
+    //     }
+    
+    //     for (const sink of sinks) {
+    //         const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
+    //         const sinkParams = sink.params ?? {};
+    //         await sinkFunc(sinkParams, data);
+    //     }
+    //     return data;
+    // }
     async runPipelineEntry() {
-        let sourceFunc = await HelperFunctions.getSourceFunction(this.source.func);
-        let data = await sourceFunc(this.sourceParams);
+        console.log("running pipeline entry");
     
-        for (const filter of filters) {
-            const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
-            const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
-            filterParams.schema = schema;
-            data = await filterFunc(data, filterParams);
+        let data = await HelperFunctions.getSourceFunction(this.source.func)
+            .then((sourceFunc) => {
+                return sourceFunc(this.sourceParams)
+            })
+            .then((result) => {
+                console.log("Result:")
+                console.log(result);
+                return result;
+            })
+        console.log("Data:", data);
+        for (const filter of this.filters) {
+            await HelperFunctions.getFilterFunction(filter.func)
+                .then((filterFunc) => HelperFunctions.getFilterParameters(filter.params ?? {})
+                    .then((filterParams) => {
+                        filterParams.schema = this.schema;
+                        console.log(data);
+                        data = filterFunc(data, filterParams);
+                        console.log(data);
+                    }));
         }
     
-        for (const sink of sinks) {
-            const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
-            const sinkParams = sink.params ?? {};
-            await sinkFunc(sinkParams, data);
+        for (const sink of this.sinks) { // assuming sinks is an array property of the class
+            await HelperFunctions.getSinkFunction(sink.func)
+                .then((sinkFunc) => {
+                    const sinkParams = sink.params ?? {};
+                    return sinkFunc(sinkParams, data);
+                });
         }
+    
         return data;
     }
 }
@@ -109,7 +162,7 @@ class HelperFunctions{
         } else {
             source = sources[name];
         }
-    
+        
         return source;
     }
     
@@ -600,25 +653,25 @@ const sinks = {
     },
 };
 
-async function transmogrifyEntry(entry, schema_path) {
-    const source = entry.source;
-    const filters = entry.filters;
-    const sinks = entry.sinks ?? [];
+// async function transmogrifyEntry(entry, schema_path) {
+//     const source = entry.source;
+//     const filters = entry.filters;
+//     const sinks = entry.sinks ?? [];
 
-    const schema = await getSchema(schema_path);
-    const sourceFunc = await getSourceFunction(source.func);
+//     const schema = await getSchema(schema_path);
+//     const sourceFunc = await getSourceFunction(source.func);
 
-    return runPipelineEntry(sourceFunc, source.params, filters, sinks, schema);
-}
+//     return runPipelineEntry(sourceFunc, source.params, filters, sinks, schema);
+// }
 
-async function transmogrifySchemaEntry(data, schemaEntry) {
-    const filters = schemaEntry.filters ?? [];
-    const sinks = schemaEntry.sinks ?? [];
+// async function transmogrifySchemaEntry(data, schemaEntry) {
+//     const filters = schemaEntry.filters ?? [];
+//     const sinks = schemaEntry.sinks ?? [];
 
-    const schema = await getSchema(schemaEntry.schema);
+//     const schema = await getSchema(schemaEntry.schema);
 
-    return runPipelineSchemaEntry(data, filters, sinks, schema);
-}
+//     return runPipelineSchemaEntry(data, filters, sinks, schema);
+// }
 
 
 

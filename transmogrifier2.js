@@ -4,9 +4,9 @@ class Transmogrifier {
         this.manifest = manifest;
         this.schemaEntries = this.getSchemaEntries();
     }
-    getSchemaEntries(){
+    getSchemaEntries() {
         let schemaList = [];
-        for (const schema of this.manifest){
+        for (const schema of this.manifest) {
             let schemaEntry = new SchemaEntry(schema.schema, schema.entries, schema.filters, schema.sinks);
             schemaList.push(schemaEntry);
         }
@@ -14,43 +14,46 @@ class Transmogrifier {
     }
     async transmogrify() {
         const schemaEntryDatas = [];
-        this.schemaEntries.forEach(async (schemaEntry)=> {
+        for (const schemaEntry of this.schemaEntries) {
             schemaEntry.transmogrifyEntry();
             schemaEntryDatas.push(await schemaEntry.runPipelineSchemaEntry());
-        });
-        // for (let schemaEntry in this.schemaEntries){
-        //     console.log(schemaEntry)
-        //     schemaEntry.transmogrifyEntry();
-        //     schemaEntryDatas.push(await schemaEntry.runPipelineSchemaEntry());
-        // }
+        }
+
         return schemaEntryDatas;
     }
 }
 
-class SchemaEntry{
-    constructor(schema, entries, filters, sinks){
+class SchemaEntry {
+    constructor(schema, entries, filters, sinks) {
         this.schema = schema ?? "";
         this.entries = this.entriesToObj(entries);
         this.filters = filters;
         this.sinks = sinks;
+        this.transmogrifiedEntries;
     }
 
-    entriesToObj(data){
+    entriesToObj(data) {
         let entries = [];
-        for (const entry of data){
+        for (const entry of data) {
             entries.push(new Entry(entry.source, entry.filters, entry.sinks, this.schema));
         }
         return entries;
     }
 
-    async transmogrifyEntry(){
-        let entryData = [];
-        for (const entry of this.entries){
-            entryData.push(await entry.runPipelineEntry());
+    async transmogrifyEntry() {
+        try {
+            let entryData = [];
+            for (const entry of this.entries) {
+                entryData.push(await entry.runPipelineEntry());
+            }
+            this.transmogrifiedEntries = entryData;
+            // console.log(this.transmogrifiedEntries)
+        } catch (error) {
+            console.error("Error in transmogrifyEntry:", error);
+            throw error;
         }
-        console.log(entryData)
-        this.transmogrifiedEntries = entryData;
     }
+    
 
     async runPipelineSchemaEntry() {
         let data = null;
@@ -58,10 +61,11 @@ class SchemaEntry{
             const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
             const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
             filterParams.schema = this.schema;
-            // console.log(this.transmogrifiedEntries)
+            console.log(this.transmogrifiedEntries)
             data = await filterFunc(this.transmogrifiedEntries, filterParams);
+            console.log(data)
         }
-    
+
         for (const sink of this.sinks) {
             const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
             const sinkParams = sink.params ?? {};
@@ -71,8 +75,8 @@ class SchemaEntry{
     }
 }
 
-class Entry{
-    constructor(source, filters, sinks, schema){
+class Entry {
+    constructor(source, filters, sinks, schema) {
         this.source = source;
         this.sourceParams = this.source.params;
         this.filters = filters;
@@ -80,118 +84,79 @@ class Entry{
         this.schema = schema;
     }
 
-    // async runPipelineEntry() {
-    //     console.log("running pipeline entry")
-    //     // let sourceFunc = await HelperFunctions.getSourceFunction(this.source.func);
-    //     let data =await HelperFunctions.getSourceFunction(this.source.func).then(
-    //         (value)=>{value(this.sourceParams).then(
-    //             (result)=>{
-    //                 data = result
-    //                 return result
-    //     })});
-    //     console.log(data)
-    //     // let data = await sourceFunc(this.sourceParams);
-    //     for (const filter of this.filters) {
-    //         await HelperFunctions.getFilterFunction(filter.func).then(
-    //             (filterFunc)=>{
-    //                 HelperFunctions.getFilterParameters(filter.params ?? {}).then(
-    //                     (filterParams)=>{
-    //                         filterParams.schema = this.schema;
-    //                         console.log(data)
-    //                         data = filterFunc(data, filterParams);
-    //                         console.log(data)
-    //                     })
-    //             }
-    //             );
-    //         const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
-    //         const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
-    //         filterParams.schema = schema;
-    //         filtered_data = await filterFunc(data, filterParams);
-    //     }
-    
-    //     for (const sink of sinks) {
-    //         const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
-    //         const sinkParams = sink.params ?? {};
-    //         await sinkFunc(sinkParams, data);
-    //     }
-    //     return data;
-    // }
     async runPipelineEntry() {
         console.log("running pipeline entry");
+        let data;
+        try {
+            data = await HelperFunctions.getSourceFunction(this.source.func)
+                .then((sourceFunc) => sourceFunc(this.sourceParams));
+   
+            for (const filter of this.filters) {
+                const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
+                const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
+                
+                filterParams.schema = this.schema;
+                data = await filterFunc(data, filterParams);
+            }
     
-        let data = await HelperFunctions.getSourceFunction(this.source.func)
-            .then((sourceFunc) => {
-                return sourceFunc(this.sourceParams)
-            })
-            .then((result) => {
-                console.log("Result:")
-                console.log(result);
-                return result;
-            })
-        console.log("Data:", data);
-        for (const filter of this.filters) {
-            await HelperFunctions.getFilterFunction(filter.func)
-                .then((filterFunc) => HelperFunctions.getFilterParameters(filter.params ?? {})
-                    .then((filterParams) => {
-                        filterParams.schema = this.schema;
-                        console.log(data);
-                        data = filterFunc(data, filterParams);
-                        console.log(data);
-                    }));
+            for (const sink of this.sinks) {
+                const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
+                const sinkParams = sink.params ?? {};
+                await sinkFunc(sinkParams, data);
+            }
+    
+            return data;
+        } catch (error) {
+            console.error("Error in runPipelineEntry:", error);
+            throw error;
         }
-    
-        for (const sink of this.sinks) { // assuming sinks is an array property of the class
-            await HelperFunctions.getSinkFunction(sink.func)
-                .then((sinkFunc) => {
-                    const sinkParams = sink.params ?? {};
-                    return sinkFunc(sinkParams, data);
-                });
-        }
-    
-        return data;
     }
+    
 }
 
-class HelperFunctions{
+class HelperFunctions {
     static async getSourceFunction(name) {
         let source;
-    
-        if (name.startsWith("http://") || name.startsWith("https://")) {
-            source = await Reader.readURL(name);
-            source = new Function(source)();
-        } else {
-            source = sources[name];
+        try {
+            if (name.startsWith("http://") || name.startsWith("https://")) {
+                source = await Reader.readURL(name);
+                source = new Function(source)();
+            } else {
+                source = sources[name];
+            }
+        } catch (error) {
+            console.log(error)
         }
-        
         return source;
     }
-    
+
     static async getFilterFunction(name) {
         let filter;
-    
+
         if (name.startsWith("http://") || name.startsWith("https://")) {
             filter = await Reader.readURL(name);
             filter = new Function(filter)();
+
         } else {
             filter = filters[name];
         }
-    
+
         return filter;
     }
-    
+
     static async getSinkFunction(name) {
         let sink;
-    
+
         if (name.startsWith("http://") || name.startsWith("https://")) {
             sink = await Reader.readURL(name);
             sink = new Function(sink)();
         } else {
             sink = sinks[name];
         }
-    
+
         return sink;
     }
-    
+
     static async getSchema(path) {
         if (!path) {
             return "";
@@ -199,18 +164,18 @@ class HelperFunctions{
         const schema = await Reader.readURLOrFile(path);
         return schema;
     }
-    
+
     static async getFilterParameters(params) {
         if (params["validator"] === "json") {
             const validator = require("jsonschema").Validator;
             params["jsonschema"] = new validator();
         }
-    
+
         if (params["library"]) {
             let library = await Reader.readURLOrFile(params["library"]);
             params["library"] = new Function(library)();
         }
-    
+
         return params;
     }
 }
@@ -324,7 +289,6 @@ class Reader {
                     reject(e);
                 });
         });
-
         return data;
     }
 
@@ -349,7 +313,7 @@ class Writer {
         } else {
             writeFunc = fs.writeFile;
         }
-    
+
         return new Promise(function (resolve, reject) {
             writeFunc(filePath, data, "utf8", function (err) {
                 if (err) {
@@ -360,7 +324,7 @@ class Writer {
             });
         });
     }
-    
+
     // Web browser
     static writeLocalFileWeb(filePath, append, data) {
         const xhr = new XMLHttpRequest();
@@ -379,7 +343,7 @@ class Writer {
             xhr.send(data);
         });
     }
-    
+
     // Android
     static writeLocalFileAndroid(filePath, append, data) {
         const scheme = "content://";
@@ -390,14 +354,14 @@ class Writer {
         writer.close();
         return Promise.resolve();
     }
-    
+
     // iOS
     static writeLocalFileiOS(filePath, append, data) {
         window.webkit.messageHandlers.writeFile.postMessage({ path: filePath, data: data });
         return Promise.resolve();
     }
-    
-    
+
+
     // Function for writing a file
     static async writeFile(params, data) {
         let filePath;
@@ -410,29 +374,29 @@ class Writer {
         }
         if (typeof window === "undefined") {
             // Running in Node.js
-            await writeLocalFileNode(filePath, append, data);
+            await Writer.writeLocalFileNode(filePath, append, data);
         } else if (typeof XMLHttpRequest !== "undefined") {
             // Running in a web browser
-            await writeLocalFileWeb(filePath, append, data);
+            await Writer.writeLocalFileWeb(filePath, append, data);
         } else if (typeof android !== "undefined") {
             // Running in an Android app
-            await writeLocalFileAndroid(filePath, append, data);
+            await Writer.writeLocalFileAndroid(filePath, append, data);
         } else if (typeof window.webkit !== "undefined" && typeof window.webkit.messageHandlers.writeFile !== "undefined") {
             // Running in an iOS app
-            await writeLocalFileiOS(filePath, append, data);
+            await Writer.writeLocalFileiOS(filePath, append, data);
         } else {
             throw new Error("Environment not supported");
         }
     }
-    
+
     // Function for writing to a URL
-    
+
     static async writeURL(url, data) {
         let result;
         const http = require("http");
         const https = require("https");
         const newUrl = new URL(url);
-    
+
         //specifies that it is a POST request
         const options = {
             hostname: newUrl.hostname,
@@ -443,9 +407,9 @@ class Writer {
                 "Content-Length": data.length,
             },
         };
-    
+
         const httpModule = url.startsWith("https://") ? https : http;
-    
+
         result = await new Promise((resolve, reject) => {
             httpModule
                 .request(options, (res) => {
@@ -461,7 +425,7 @@ class Writer {
                     reject(e);
                 });
         });
-    
+
         return result;
     }
     // Platform-specific functions for writing local files
@@ -509,116 +473,119 @@ class Writer {
     //         });
     //     });
     // }
-    
+
 }
 
-// Platform-specific functions for listing files in a directory
-// Node.js
-function listFilesNode(dirPath, extension) {
-    const fs = require("fs");
-    return new Promise(function (resolve, reject) {
-        fs.readdir(dirPath, function (err, files) {
-            if (err) {
-                reject(err);
-            } else {
-                const filteredFiles = files.filter(function (file) {
-                    return file.endsWith(extension);
-                });
-                resolve(filteredFiles);
-            }
-        });
-    });
-}
-
-// Web browser
-function listFilesWeb(dirPath, extension) {
-    return new Promise(function (resolve, reject) {
-        const xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    const fileList = xhr.responseText.split("\n");
-                    const filteredFiles = fileList.filter(function (file) {
+class Lister {
+    // Platform-specific functions for listing files in a directory
+    // Node.js
+    listFilesNode(dirPath, extension) {
+        const fs = require("fs");
+        return new Promise(function (resolve, reject) {
+            fs.readdir(dirPath, function (err, files) {
+                if (err) {
+                    reject(err);
+                } else {
+                    const filteredFiles = files.filter(function (file) {
                         return file.endsWith(extension);
                     });
                     resolve(filteredFiles);
-                } else {
-                    reject(new Error("Error listing files"));
                 }
-            }
-        };
-        xhr.open("GET", dirPath);
-        xhr.send();
-    });
-}
-
-// Android
-function listFilesAndroid(dirPath, extension) {
-    const scheme = "content://";
-    const uri = android.net.Uri.parse(scheme + dirPath);
-    const contentResolver = context.getContentResolver();
-    const selection = android.provider.MediaStore.Files.FileColumns.DATA + " like ?";
-    const selectionArgs = ["%" + extension];
-    const projection = [android.provider.MediaStore.Files.FileColumns.DATA];
-    const cursor = contentResolver.query(uri, projection, selection, selectionArgs, null);
-    const fileList = [];
-    while (cursor.moveToNext()) {
-        const filePath = cursor.getString(0);
-        fileList.push(filePath);
+            });
+        });
     }
-    cursor.close();
-    return Promise.resolve(fileList);
-}
 
-// iOS
-function listFilesiOS(dirPath, extension) {
-    const fileList = window.webkit.messageHandlers.listFiles.postMessage({ path: dirPath, extension: extension });
-    return Promise.resolve(fileList);
-}
-
-// Promisified versions of the platform-specific functions
-
-// Node.js
-function listFilesNodeAsync(dirPath, extension) {
-    return listFilesNode(dirPath, extension);
-}
-
-// Web browser
-function listFilesWebAsync(dirPath, extension) {
-    return listFilesWeb(dirPath, extension);
-}
-
-// Android
-function listFilesAndroidAsync(dirPath, extension) {
-    return listFilesAndroid(dirPath, extension);
-}
-
-// iOS
-function listFilesiOSAsync(dirPath, extension) {
-    return listFilesiOS(dirPath, extension);
-}
-
-// Function for listing files
-
-async function listFiles(dirPath, extension) {
-    let fileList;
-    if (typeof window === "undefined") {
-        // Running in Node.js
-        fileList = await listFilesNodeAsync(dirPath, extension);
-    } else if (typeof XMLHttpRequest !== "undefined") {
-        // Running in a web browser
-        fileList = await listFilesWebAsync(dirPath, extension);
-    } else if (typeof android !== "undefined") {
-        // Running in an Android app
-        fileList = await listFilesAndroidAsync(dirPath, extension);
-    } else if (typeof window.webkit !== "undefined" && typeof window.webkit.messageHandlers.listFiles !== "undefined") {
-        // Running in an iOS app
-        fileList = await listFilesiOSAsync(dirPath, extension);
-    } else {
-        throw new Error("Environment not supported");
+    // Web browser
+    listFilesWeb(dirPath, extension) {
+        return new Promise(function (resolve, reject) {
+            const xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        const fileList = xhr.responseText.split("\n");
+                        const filteredFiles = fileList.filter(function (file) {
+                            return file.endsWith(extension);
+                        });
+                        resolve(filteredFiles);
+                    } else {
+                        reject(new Error("Error listing files"));
+                    }
+                }
+            };
+            xhr.open("GET", dirPath);
+            xhr.send();
+        });
     }
-    return fileList;
+
+    // Android
+    listFilesAndroid(dirPath, extension) {
+        const scheme = "content://";
+        const uri = android.net.Uri.parse(scheme + dirPath);
+        const contentResolver = context.getContentResolver();
+        const selection = android.provider.MediaStore.Files.FileColumns.DATA + " like ?";
+        const selectionArgs = ["%" + extension];
+        const projection = [android.provider.MediaStore.Files.FileColumns.DATA];
+        const cursor = contentResolver.query(uri, projection, selection, selectionArgs, null);
+        const fileList = [];
+        while (cursor.moveToNext()) {
+            const filePath = cursor.getString(0);
+            fileList.push(filePath);
+        }
+        cursor.close();
+        return Promise.resolve(fileList);
+    }
+
+    // iOS
+    listFilesiOS(dirPath, extension) {
+        const fileList = window.webkit.messageHandlers.listFiles.postMessage({ path: dirPath, extension: extension });
+        return Promise.resolve(fileList);
+    }
+
+    // Promisified versions of the platform-specific functions
+
+    // Node.js
+    listFilesNodeAsync(dirPath, extension) {
+        return listFilesNode(dirPath, extension);
+    }
+
+    // Web browser
+    listFilesWebAsync(dirPath, extension) {
+        return listFilesWeb(dirPath, extension);
+    }
+
+    // Android
+    listFilesAndroidAsync(dirPath, extension) {
+        return listFilesAndroid(dirPath, extension);
+    }
+
+    // iOS
+    listFilesiOSAsync(dirPath, extension) {
+        return listFilesiOS(dirPath, extension);
+    }
+
+    // Function for listing files
+
+    async listFiles(dirPath, extension) {
+        let fileList;
+        if (typeof window === "undefined") {
+            // Running in Node.js
+            fileList = await listFilesNodeAsync(dirPath, extension);
+        } else if (typeof XMLHttpRequest !== "undefined") {
+            // Running in a web browser
+            fileList = await listFilesWebAsync(dirPath, extension);
+        } else if (typeof android !== "undefined") {
+            // Running in an Android app
+            fileList = await listFilesAndroidAsync(dirPath, extension);
+        } else if (typeof window.webkit !== "undefined" && typeof window.webkit.messageHandlers.listFiles !== "undefined") {
+            // Running in an iOS app
+            fileList = await listFilesiOSAsync(dirPath, extension);
+        } else {
+            throw new Error("Environment not supported");
+        }
+        return fileList;
+    }
 }
+
 
 const sources = {
     file_read: async function (params) {
@@ -646,10 +613,10 @@ const sinks = {
         return;
     },
     file_write: async function (params, data) {
-        return await writeFile(params, data);
+        return await Writer.writeFile(params, data);
     },
     url_write: async function (params, data) {
-        return await writeURL(params, data);
+        return await Writer.writeURL(params, data);
     },
 };
 
@@ -677,5 +644,5 @@ const sinks = {
 
 module.exports = {
     Transmogrifier,
-    
+
 };

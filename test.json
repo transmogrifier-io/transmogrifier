@@ -1,6 +1,7 @@
 [
     {
-      "schema": "https://github.com/transmogrifier-io/transmogrifier/blob/felixng_oden-to-transmog-filter/schemas/manifest-schema.json",
+      "schema": "https://raw.githubusercontent.com/transmogrifier-io/transmogrifier/felixng_oden-to-transmog-filter/schemas/manifest-schema.json",
+      
       "filters": [
         {
           "func": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/ms-ss-rg-collector-update/collectors/collector-json.js"

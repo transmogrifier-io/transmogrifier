@@ -52,18 +52,22 @@ class SchemaEntry {
             throw error;
         }
     }
-    
+
 
     async runPipelineSchemaEntry() {
+        console.log("running pipeline schema entry")
         let data = null;
         for (const filter of this.filters) {
+            console.log("filter1", filter)
             const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
             const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
-            filterParams.schema = this.schema;
+            console.log('filterparams', filterParams)
+            filterParams.schema = await HelperFunctions.getSchema(this.schema);
+            filterParams.schema = filterParams.schema;
             data = await filterFunc(this.transmogrifiedEntries, filterParams);
-            console.log(data)
         }
         for (const sink of this.sinks) {
+            console.log('sink', sink)
             const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
             const sinkParams = sink.params ?? {};
             await sinkFunc(sinkParams, data);
@@ -87,28 +91,28 @@ class Entry {
         try {
             data = await HelperFunctions.getSourceFunction(this.source.func)
                 .then((sourceFunc) => sourceFunc(this.sourceParams));
-   
+
             for (const filter of this.filters) {
                 const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
                 const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
-                
+
                 filterParams.schema = this.schema;
                 data = await filterFunc(data, filterParams);
             }
-    
+
             for (const sink of this.sinks) {
                 const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
                 const sinkParams = sink.params ?? {};
                 await sinkFunc(sinkParams, data);
             }
-    
+
             return data;
         } catch (error) {
             console.error("Error in runPipelineEntry:", error);
             throw error;
         }
     }
-    
+
 }
 
 class HelperFunctions {
@@ -256,6 +260,7 @@ class Reader {
 
     // Function for reading a URL
     static async readURL(url) {
+        console.log("reading url", url)
         let data;
         const http = require("http");
         const https = require("https");
@@ -263,25 +268,22 @@ class Reader {
         const httpModule = url.startsWith("https://") ? https : http;
 
         data = await new Promise((resolve, reject) => {
-            httpModule
-                .get(url, (res) => {
-                    if (res.statusCode !== 200) {
-                        reject(new Error(`Failed to read URL \"${url}\": HTTP status code ${res.statusCode}`));
-                        return;
-                    }
+            httpModule.get(url, (res) => {
+                if (res.statusCode !== 200) {
+                    reject(new Error(`Failed to read URL \"${url}\": HTTP status code ${res.statusCode}`));
+                    return;
+                }
 
-                    let rawData = "";
-                    res.on("data", (chunk) => {
-                        rawData += chunk;
-                    });
-                    res.on("end", () => {
-                        try {
-                            resolve(rawData);
-                        } catch (e) {
-                            reject(e);
-                        }
-                    });
-                })
+                let rawData = "";
+                res.on("data", (chunk) => {rawData += chunk;});
+                res.on("end", () => {
+                    try {
+                        resolve(rawData);
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            })
                 .on("error", (e) => {
                     reject(e);
                 });
@@ -289,12 +291,12 @@ class Reader {
         return data;
     }
 
-    async readURLOrFile(path) {
+    static async readURLOrFile(path) {
         let data;
         if (path.startsWith("http://") || path.startsWith("https://")) {
-            data = await readURL(path);
+            data = await Reader.readURL(path);
         } else {
-            data = await readFile(path);
+            data = await Reader.readFile(path);
         }
         return data;
     }
@@ -616,26 +618,6 @@ const sinks = {
         return await Writer.writeURL(params, data);
     },
 };
-
-// async function transmogrifyEntry(entry, schema_path) {
-//     const source = entry.source;
-//     const filters = entry.filters;
-//     const sinks = entry.sinks ?? [];
-
-//     const schema = await getSchema(schema_path);
-//     const sourceFunc = await getSourceFunction(source.func);
-
-//     return runPipelineEntry(sourceFunc, source.params, filters, sinks, schema);
-// }
-
-// async function transmogrifySchemaEntry(data, schemaEntry) {
-//     const filters = schemaEntry.filters ?? [];
-//     const sinks = schemaEntry.sinks ?? [];
-
-//     const schema = await getSchema(schemaEntry.schema);
-
-//     return runPipelineSchemaEntry(data, filters, sinks, schema);
-// }
 
 
 

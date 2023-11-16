@@ -60,11 +60,9 @@ class SchemaEntry {
             const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
             const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
             filterParams.schema = this.schema;
-            // console.log(filterParams)
             data = await filterFunc(this.transmogrifiedEntries, filterParams);
-           
+            console.log(data)
         }
-
         for (const sink of this.sinks) {
             const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
             const sinkParams = sink.params ?? {};

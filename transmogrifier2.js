@@ -15,7 +15,7 @@ class Transmogrifier {
     async transmogrify() {
         const schemaEntryDatas = [];
         for (const schemaEntry of this.schemaEntries) {
-            schemaEntry.transmogrifyEntry();
+            await schemaEntry.transmogrifyEntry();
             schemaEntryDatas.push(await schemaEntry.runPipelineSchemaEntry());
         }
 
@@ -47,7 +47,6 @@ class SchemaEntry {
                 entryData.push(await entry.runPipelineEntry());
             }
             this.transmogrifiedEntries = entryData;
-            // console.log(this.transmogrifiedEntries)
         } catch (error) {
             console.error("Error in transmogrifyEntry:", error);
             throw error;
@@ -61,9 +60,9 @@ class SchemaEntry {
             const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
             const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
             filterParams.schema = this.schema;
-            console.log(this.transmogrifiedEntries)
+            // console.log(filterParams)
             data = await filterFunc(this.transmogrifiedEntries, filterParams);
-            console.log(data)
+           
         }
 
         for (const sink of this.sinks) {

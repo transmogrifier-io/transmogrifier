@@ -1,3 +1,5 @@
+const { error } = require("console");
+
 class Transmogrifier {
     schemaEntries = []
     constructor(manifest) {
@@ -10,7 +12,6 @@ class Transmogrifier {
             let schemaEntry = new SchemaEntry(schema.schema, schema.entries, schema.filters, schema.sinks);
             schemaList.push(schemaEntry);
         }
-        console.log(schemaList)
         return schemaList;
     }
     async transmogrify() {
@@ -56,23 +57,18 @@ class SchemaEntry {
 
 
     async runPipelineSchemaEntry() {
-        // let temp = JSON.parse(this.transmogrifiedEntries)
-        // let schema = temp.schema
-        
-        console.log("running pipeline schema entry")
-        let data = null;
+        let data = this.transmogrifiedEntries;
         for (const filter of this.filters) {
             const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
             const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
             filterParams.schema = await HelperFunctions.getSchema(this.schema);
-            data = await filterFunc(this.transmogrifiedEntries, filterParams);
+            data = await filterFunc(data, filterParams);
         }
         for (const sink of this.sinks) {
             const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
             const sinkParams = sink.params ?? {};
             await sinkFunc(sinkParams, data);
         }
-        console.log("FINAL", data)
         return data;
     }
 }
@@ -83,21 +79,18 @@ class Entry {
         this.sourceParams = this.source.params;
         this.filters = filters;
         this.sinks = sinks;
-        this.schema;
     }
 
     async runPipelineEntry() {
-        console.log("running pipeline entry");
         let data;
         try {
             data = await HelperFunctions.getSourceFunction(this.source.func)
                 .then((sourceFunc) => sourceFunc(this.sourceParams));
-            
+
             for (const filter of this.filters) {
-                
+
                 const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
                 const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
-                filterParams.schema = this.schema;
                 data = await filterFunc(data, filterParams);
             }
 
@@ -106,14 +99,12 @@ class Entry {
                 const sinkParams = sink.params ?? {};
                 await sinkFunc(sinkParams, data);
             }
-            console.log("pipelineentry", data)
             return data;
         } catch (error) {
             console.error("Error in runPipelineEntry:", error);
             throw error;
         }
     }
-
 }
 
 class HelperFunctions {
@@ -275,7 +266,7 @@ class Reader {
                 }
 
                 let rawData = "";
-                res.on("data", (chunk) => {rawData += chunk;});
+                res.on("data", (chunk) => { rawData += chunk; });
                 res.on("end", () => {
                     try {
                         resolve(rawData);
@@ -605,9 +596,6 @@ const filters = {
     to_lower: async function (data, params) {
         return data.toLowerCase();
     },
-    custom_filter: async function (data, params) {
-        return await custom_filter(data, params);
-    }
 };
 
 const sinks = {
@@ -622,93 +610,9 @@ const sinks = {
     },
 };
 
-async function custom_filter (data, params) {
-    // console.log(data)
-    // check for schema
-    if (!params.schema) {
-        throw "schema not found";
-    }
-
-    // detect schema type and parse schema
-    let schema;
-    let validator;
-    let schemaType;
-    let validatorType;
-    try {
-        let json_schema = JSON.parse(params.schema);
-        schema = json_schema;
-        schemaType = "json";
-    } catch { }
-
-    // get validator for schema type
-    switch (schemaType) {
-        case "json": {
-            if (params["jsonschema"]) {
-                validator = params["jsonschema"];
-                validatorType = "jsonschema";
-            } else if (params["ajv"]) {
-                validator = params["ajv"].compile(schema);
-                validatorType = "ajv";
-            }
-        }
-    }
-
-    // check for unsupported schema type (!schema) or missing validator for schema type (!validator)
-    if (!schema) {
-        "validate: unknown/unsupported schema type"
-    }
-    if (!validator) {
-        throw "validate: validator for schema type not found"
-    }
-
-    let valid_data = [];
-    let errors_list = [];
-    
-    data.map(d => {
-        console.log(d.entries[0])
-        switch (schemaType) {
-            case "json": {
-                switch (validatorType) {
-                    case "jsonschema": {
-                        let result = validator.validate(d, schema, { required: true });
-                        if (!result.valid) {
-                            console.log(result)
-                            errors_list.push({ type: "validate-json", validation_result: result, data_entry: d });
-                        } else {
-                            console.log("success")
-                            valid_data.push(d);
-                        }
-                        break;
-                    }
-                    case "ajv": {
-                        let valid = validator(d);
-                        if (!valid) {
-                            errors_list.push({ type: "validate-json", validation_result: validator.errors, data_entry: d });
-                        } else {
-                            valid_data.push(d);
-                        }
-                        break;
-                    }
-                    default: {
-                        throw "validate: validator not supported"
-                    }
-                }
-                break;
-            }
-            default: {
-                throw "validate: data type not supported";
-            }
-        }
-    })
-    console.log("VALID", valid_data)
-    console.log("ERRORS", errors_list)
-    return { data: valid_data, errors: errors_list };
-}
-
 
 
 
 module.exports = {
     Transmogrifier,
-
 };

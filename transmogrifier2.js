@@ -65,7 +65,6 @@ class SchemaEntry {
             const filterFunc = await HelperFunctions.getFilterFunction(filter.func);
             const filterParams = await HelperFunctions.getFilterParameters(filter.params ?? {});
             filterParams.schema = await HelperFunctions.getSchema(this.schema);
-            console.log("PIPELINESCHEMAENTRY", filterFunc)
             data = await filterFunc(this.transmogrifiedEntries, filterParams);
         }
         for (const sink of this.sinks) {
@@ -73,6 +72,7 @@ class SchemaEntry {
             const sinkParams = sink.params ?? {};
             await sinkFunc(sinkParams, data);
         }
+        console.log("FINAL", data)
         return data;
     }
 }
@@ -106,6 +106,7 @@ class Entry {
                 const sinkParams = sink.params ?? {};
                 await sinkFunc(sinkParams, data);
             }
+            console.log("pipelineentry", data)
             return data;
         } catch (error) {
             console.error("Error in runPipelineEntry:", error);
@@ -699,7 +700,8 @@ async function custom_filter (data, params) {
             }
         }
     })
-    console.log(valid_data)
+    console.log("VALID", valid_data)
+    console.log("ERRORS", errors_list)
     return { data: valid_data, errors: errors_list };
 }
 

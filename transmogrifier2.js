@@ -1,11 +1,19 @@
 const { error } = require("console");
 
 class Transmogrifier {
-    schemaEntries = []
+    /**
+     * Class represents a Transmogrifier object
+     * @param {Array} manifest - Array of objects containing schema, entries, filters, and sinks
+     */
     constructor(manifest) {
         this.manifest = manifest;
         this.schemaEntries = this.getSchemaEntries();
     }
+
+    /**
+     * Function creates SchemaEntry objects from manifest
+     * @returns {Array} - Array of SchemaEntry objects
+     */
     getSchemaEntries() {
         let schemaList = [];
         for (const schema of this.manifest) {
@@ -14,6 +22,11 @@ class Transmogrifier {
         }
         return schemaList;
     }
+
+    /**
+     * Function transmogrifies and runs the pipeline for each SchemaEntry in the Schema
+     * @returns {Array} - Array of data from each SchemaEntry
+     */
     async transmogrify() {
         const schemaEntryDatas = [];
         for (const schemaEntry of this.schemaEntries) {
@@ -26,6 +39,13 @@ class Transmogrifier {
 }
 
 class SchemaEntry {
+    /**
+     * Class represents a Schema Entry Object
+     * @param {string} schema - Path to schema file
+     * @param {object} entries - Array of objects containing entries
+     * @param {object} filters - Array of objects containing filters
+     * @param {object} sinks - Array of objects containing sinks
+     */
     constructor(schema, entries, filters, sinks) {
         this.schema = schema ?? "";
         this.entries = this.entriesToObj(entries);
@@ -34,6 +54,11 @@ class SchemaEntry {
         this.transmogrifiedEntries;
     }
 
+    /**
+     * Function creates Entry objects 
+     * @param {object} data - Array of objects containing entries
+     * @returns {Array} - Array of Entry objects
+     */
     entriesToObj(data) {
         let entries = [];
         for (const entry of data) {
@@ -41,7 +66,9 @@ class SchemaEntry {
         }
         return entries;
     }
-
+    /**
+     * Function transmogrifies each entry in the SchemaEntry and stores in this.transmogrifiedEntries
+     */
     async transmogrifyEntry() {
         try {
             let entryData = [];
@@ -55,7 +82,10 @@ class SchemaEntry {
         }
     }
 
-
+    /**
+     * Function runs data through the filters and sinks and returns the processed data
+     * @returns {Array} - Array of processed data from a SchemaEntry
+     */
     async runPipelineSchemaEntry() {
         let data = this.transmogrifiedEntries;
         for (const filter of this.filters) {
@@ -74,6 +104,12 @@ class SchemaEntry {
 }
 
 class Entry {
+    /**
+     * Class represents an Entry Object
+     * @param {object} source - Object containing source of data
+     * @param {object} filters - Array of objects containing filters
+     * @param {object} sinks - Array of objects containing sinks
+     */
     constructor(source, filters, sinks) {
         this.source = source;
         this.sourceParams = this.source.params;
@@ -81,6 +117,10 @@ class Entry {
         this.sinks = sinks;
     }
 
+    /**
+     * Function gets the data from the source and runs it through the filters and sinks
+     * @returns {Array} - Array of processed data 
+     */
     async runPipelineEntry() {
         let data;
         try {
@@ -108,6 +148,11 @@ class Entry {
 }
 
 class HelperFunctions {
+    /**
+     * Function returns the source function
+     * @param {string} name - Name or URL of the function to get
+     * @returns the source function
+     */
     static async getSourceFunction(name) {
         let source;
         try {
@@ -123,6 +168,11 @@ class HelperFunctions {
         return source;
     }
 
+    /**
+     * Function returns the filter function
+     * @param {string} name - Name or URL of the function to get
+     * @returns the filter function
+     */
     static async getFilterFunction(name) {
         let filter;
 
@@ -137,6 +187,11 @@ class HelperFunctions {
         return filter;
     }
 
+    /**
+     * Function returns the sink function
+     * @param {string} name - Name or URL of the function to get
+     * @returns the sink function
+     */
     static async getSinkFunction(name) {
         let sink;
 
@@ -150,6 +205,11 @@ class HelperFunctions {
         return sink;
     }
 
+    /**
+     * Function returns the schema
+     * @param {string} path - URL to schema file
+     * @returns schema as a string
+     */
     static async getSchema(path) {
         if (!path) {
             return "";
@@ -158,6 +218,11 @@ class HelperFunctions {
         return schema;
     }
 
+    /**
+     * Function returns the filter parameters
+     * @param {object} params 
+     * @returns params object
+     */
     static async getFilterParameters(params) {
         if (params["validator"] === "json") {
             const validator = require("jsonschema").Validator;
@@ -168,13 +233,12 @@ class HelperFunctions {
             let library = await Reader.readURLOrFile(params["library"]);
             params["library"] = new Function(library)();
         }
-
         return params;
     }
 }
 
 class Reader {
-    // Platform-specific functions for reading local files
+    // Platform-specific functions for reading a file
 
     // Node.js
     static readLocalFileNode(filePath) {
@@ -189,7 +253,6 @@ class Reader {
             });
         });
     }
-
     // Web browser
     static readLocalFileWeb(filePath) {
         const xhr = new XMLHttpRequest();
@@ -250,7 +313,11 @@ class Reader {
         return data;
     }
 
-    // Function for reading a URL
+    /**
+     * Function for reading a URL
+     * @param {string} url - URL to read
+     * @returns data from URL
+     */
     static async readURL(url) {
         let data;
         const http = require("http");
@@ -282,6 +349,11 @@ class Reader {
         return data;
     }
 
+    /**
+     * Function to return data from a URL or file path
+     * @param {string} path - URL or file path
+     * @returns data as string
+     */
     static async readURLOrFile(path) {
         let data;
         if (path.startsWith("http://") || path.startsWith("https://")) {
@@ -294,6 +366,9 @@ class Reader {
 }
 
 class Writer {
+    // Platform-specific functions for writing a file
+
+    // Node.js
     static writeLocalFileNode(filePath, append, data) {
         const fs = require("fs");
         let writeFunc;
@@ -609,7 +684,6 @@ const sinks = {
         return await Writer.writeURL(params, data);
     },
 };
-
 
 
 

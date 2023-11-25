@@ -25,6 +25,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
+import javax.script.Bindings;
+import javax.script.Invocable;
 // script engine for graalvm
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -54,6 +56,9 @@ import org.json.JSONTokener;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
+
+import javax.script.*;
+
 
 public class HelperFunctions {
     private static ScriptEngine engine = new ScriptEngineManager().getEngineByName("javascript");
@@ -110,18 +115,21 @@ public class HelperFunctions {
       //     return Filters.getFilters(filter_function, new org.json.JSONObject(data));
       // }
 
-    // TO DO NOV 23
     public static CompletableFuture<?> getFilterFunctionEntry(String filter_function, CompletableFuture<String> data, Map<String, String> params) {
         // String data = the source function 'url_read' applied to the source params
-          System.out.println("in getFilterFunctionEntry function");
-        System.out.println(data);
-          System.out.println(params);
+          System.out.println("HelperFunc: in getFilterFunctionEntry function");
+        // System.out.println(data);
+        //   System.out.println(params);
           String filter_function_text = "";
+          String filter_params_text = "";
           if (filter_function.startsWith("http://") || filter_function.startsWith("https://")) {
               try {
                 System.out.println(params);
                 // text from the filter function url
-                  filter_function_text = Reader.readURL(filter_function).get();
+                String new_filter_function = "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/ss-ee/filters/canada/british-columbia/vancouver/public-art-json-to-json.js";
+                // https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/filters/canada/british-columbia/vancouver/public-art-json-to-json.js : NEED (data, param)
+                  filter_function_text = Reader.readURLNoLastLine(new_filter_function).get();
+                //   System.out.println(filter_function_text);
               } catch (IOException | InterruptedException | ExecutionException e) {
                 System.out.println("please pass a filter function url!");
                 e.printStackTrace();
@@ -144,31 +152,120 @@ public class HelperFunctions {
             }
 
         } else if (params.get("library") != null) {
-            try {
-                //text version of whatever was retrieved from https:// 
-                String library = Reader.readUrlOrFile((String) params.get("library")).get();
-                // System.out.println(library);
-                // TEST
-                Object library_object = engine.eval(library); // puts the string from url to the engine
-                System.out.println(library_object);
+            try {      
+                // use engine to run the js script func : filter_function_text
+                // pass in data and the library url to the above
+                try {
+                    filter_params_text = Reader.readURLNoLastLine(params.get("library")).get();
+                    filter_params_text += " function getLib() { return lib; }";
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+                // System.out.println("!!!!filter_params_text: " + filter_params_text + "\n");
+
+                Object content_result = engine.eval(filter_params_text); // evalutes the library params from the filter entries list
+                // params.library = Map<String, Object>
+                // Object csv_parser = ((Map<String, Object>) content_result).get("csv_parser");
+                // Object add_ ((Map<String, Object>) content_result).get("add_required");
+                // Object add_if_not_required =null = ((Map<String, Object>) content_result).get("add_if_not_null");
+                // Object remove_if_null = ((Map<String, Object>) content_result).get("remove_if_null");
+                // Object remove_if_empty = ((Map<String, Object>) content_result).get("remove_if_empty");
+                // Object create_dates_template = ((Map<String, Object>) content_result).get("create_dates_template");
+                // Object remove_null_date_fields = ((Map<String, Object>) content_result).get("remove_null_date_fields");
+                // Object remove_if_zero = ((Map<String, Object>) content_result).get("remove_if_zero");
+                // Object validate_params = ((Map<String, Object>) content_result).get("validate_params"); 
+                
+                StringBuilder library_string = new StringBuilder("{");
+                JSONObject library_json = new JSONObject();
+                // Map<String, Object> library = new HashMap<String, Object>();
+                for (Map.Entry<String, Object> entry: ((Map<String, Object>) content_result).entrySet()) {
+                    String functionName = entry.getKey();
+                    Object function = entry.getValue();
+                    library_string.append("'" + functionName + "' : '" + function + "', "); //{"key" : "value"}
+                    library_json.put(functionName, function);
+                    // library.put(functionName, function);
+                }
+                library_string.deleteCharAt(library_string.length() - 2);
+                //  JSONObject library_json = new JSONObject(library_string);
+
+                library_string.append("}");
+                String params_string = "{ 'library': '" + library_string.toString() + "' }";
+                System.out.println("params_string: " + params_string);
+                // JSONObject jsonObject = new JSONObject(jsonString);
+                // JSONObject params_json = new JSONObject(params_string);
+                // params_json.put("library", library_json);
+
+                // System.out.println("\nlibrary: " + params_json.toString() + "\n");
+                // params.put("library", library.toString());
+
+                // String library_info = params.get("library");
+                // System.out.println("!!!!!!!!!!!!!!");
+                // System.out.println(library_info);
+
+               
+                // System.out.println("library_remove_null: " + library_remove_null);
+
+                // Object content_result = engine.eval(content);
+                // System.out.println(((Map<String, Object>) content_result).get("remove_null_date_fields"));
+                
+                // System.out.println("filter param text: " + libFunction);
+                
+                //filter_function_text = public-art-json-to-json.js
+                engine.eval(filter_function_text); // evalutes the library func from the filter entries list
+                Object filterFunction = engine.get("filter");
+                // Retrieves the filter function
+                System.out.println("filterFunction: " + filterFunction);
+
+
+                Invocable invocable = (Invocable) engine;
+
+                
+                // Object libraryResult = invocable.invokeFunction("lib");
+                params.put("library", filter_params_text);
+
+                //pase json
+
+
+                //creates a java map representing the javascript object 
+                Bindings paramsObject = engine.createBindings();
+                paramsObject.put("library", "value1");
+                
+                // Object json = engine.eval("function a() { JSON.parse({ \"library\" :\"hello\" }) }");
+                // System.out.println("!!!!" + json);
+                // Object result = engine.eval("function a() { return JSON.parse('{ \"library\" :\"hello\" }'); }");
+                Object result = engine.eval("function a() { return { \"library\": \"hello\" }; }");
+                Object json = ((javax.script.Invocable) engine).invokeFunction("a");
+                System.out.println("Parsed JSON object: " + json);
+                
+                Object filterResult = invocable.invokeFunction("filter", data.get(), json);
+                System.out.println("SUCCESSFULLY PASSED LINE 225!!!");
+                // Object filterResult = invocable.invokeFunction("filter", data.get(), "{ library: 'hello'}");
+                System.out.println("Result of filter function: " + filterResult);
+
+                return (CompletableFuture<?>) filterResult;
+                
                 // filter_func(data, params);
                 /*
                 * COME BACK TO THIS, TO DO
                 */
             } catch (InterruptedException | ExecutionException | ScriptException e) {
                 System.out.println(e);
+            } catch (NoSuchMethodException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
         }
         String data_string = "";
         try {
             data_string = data.get();
-            System.out.println(data.get());
         } catch (InterruptedException | ExecutionException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } 
-        System.out.println("!!!");
-        System.out.println(data);
+        // System.out.println("!!!");
+        // System.out.println(data);
         // public static CompletableFuture<String> getFilters(String filter, org.json.JSONObject data) 
         return Filters.getFilters(filter_function, data_string);
       }

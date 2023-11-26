@@ -114,6 +114,37 @@ public class Reader {
         });
     }
 
+    public static CompletableFuture<String> readURLNoLastLine(String urlString) throws IOException {
+        return CompletableFuture.supplyAsync(() -> {
+            StringBuilder contentBuilder = new StringBuilder();
+            try {
+
+                URL url = new URL(urlString);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+
+                String line;
+                String previousLine = null;
+
+                while ((line = reader.readLine()) != null) {
+                    if (previousLine != null) {
+                        contentBuilder.append(previousLine).append("\n");
+                    }
+                    previousLine = line;
+                }
+
+                reader.close();
+                connection.disconnect();
+            
+                // Display or use the content without the last line as needed
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return contentBuilder.toString();
+
+        });
+    }
+
     public static CompletableFuture<String> readFile(String filePath) {
         return CompletableFuture.supplyAsync(() -> {
             try {

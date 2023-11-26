@@ -78,7 +78,7 @@ public class Entry {
 
     // async
     public CompletableFuture<String> runPipelineEntry(String schema) {
-        System.out.println("in runPipelineEntry function");
+        System.out.println("Entry.java: in runPipelineEntry function");
         // the processed data for entry
         CompletableFuture<String> data = HelperFunctions.getSourceFunction(this.source);
 

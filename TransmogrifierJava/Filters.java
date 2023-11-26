@@ -77,7 +77,7 @@ public class Filters {
         filters.put("to_upper", to_upper(data));
 
         filters.put("to_lower", to_lower(data));
-        if (filters.get(filter) == null) {
+        if (filters.isEmpty()) {
             System.out.println("filter not found");
             return CompletableFuture.supplyAsync(() -> {
                 return data;

@@ -97,7 +97,7 @@ public class Transmogrifier {
 
     public static void main(String[] args) {
         JSONParser parser = new JSONParser();
-        try (FileReader reader = new FileReader("manifest_example.json")) {
+        try (FileReader reader = new FileReader("manifest_example_nofilters.json")) {
             Object obj = parser.parse(reader);
             List<JSONObject> jsonObject = (List<JSONObject>) obj; // list of json object
             // System.out.println(jsonObject.get(0).get("schema"));
@@ -106,6 +106,7 @@ public class Transmogrifier {
             // transmogrifier.getSchemaEntries();
 
         } catch (IOException | ParseException e) {
+            e.printStackTrace();
         }
     }
 }

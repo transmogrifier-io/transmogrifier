@@ -207,6 +207,9 @@ This repository includes implementations for the transmogrifier in both Javascri
 # Limitations
 The following sections cover any limitations that the different transmogrifier implemenations may have.
 
+- Currently the C# transmogrifier is not completely implemented. Currently returns "Object reference not set to an instance of an object." meaning a null property is currently being referenced in the code.
+  > Further debugging is required.
+
 ## Javascript implementation limitations
 The Javascript implementation uses node.js for some of its functionality, applications that are developed using flutter will
 not be able to use this implementation. The Dart implementation should be used if this is the case.

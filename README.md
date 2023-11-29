@@ -169,6 +169,38 @@ The example transmogrifier takes the manifest as a command line argument, so to 
 (assuming you are in the same directory as the example-main.js) 
 `node example-main.js my_manifest.json` 
 
+### C Sharp Transmogrifier Instructions
+
+To run the C# Transmogrifier, you will need an executor file and the main Transmogrifier file. In this example, we have two files: `example-main2-CS.cs` (executor) 
+and `transmogrifier2_ver3.cs` (Transmogrifier implementation).
+
+1. Create a new console application using the .NET CLI or your preferred C# development environment.
+   ```
+   dotnet new console -n YourCSProjectName
+   cd YourCSProjectName
+   ```
+
+2. Replace the contents of Program.cs with the contents of example-main2-CS.cs and create a new file named transmogrifier2_ver3.cs with the contents of the corresponding file. 
+Also add the manifest to use to the project folder, for example "my_manifest.json"
+
+3. Run the following commands to restore NuGet packages and build the project.
+  ```
+  dotnet restore
+  ```
+
+4. Run the application, providing the manifest file as a command-line argument.
+  ```
+  dotnet run test.json
+  ```
+
+  *Notes 
+
+- C Sharp Transmogrifier uses the Newtonsoft.Json and Newtonsoft.Json.Schema packages and these must be installed in order to run. Packages can be installed with the commands:
+  ```
+  dotnet add package Newtonsoft.Json
+  dotnet add package Newtonsoft.Json.Schema
+  ```
+
 # Implementations
 This repository includes implementations for the transmogrifier in both Javascript and Dart.
 

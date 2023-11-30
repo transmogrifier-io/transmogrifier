@@ -24,12 +24,6 @@
         "params": {
           "path": "./all-my-data-1.json"
         }
-      },
-      {
-        "func": "file_write",
-        "params": {
-          "path": "./all-my-data-2.json"
-        }
       }
     ],
     "entries": [
@@ -59,12 +53,6 @@
             "func": "file_write",
             "params": {
               "path": "./my-vancouver-data-1.json"
-            }
-          },
-          {
-            "func": "file_write",
-            "params": {
-              "path": "./my-vancouver-data-2.json"
             }
           }
         ]

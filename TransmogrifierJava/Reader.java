@@ -12,10 +12,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class Reader {
-
-    public static void testFunction(){
-        System.out.println("test function");
-    }
+    /**
+     * Reads the url or file
+     */
     public static CompletableFuture<String> readUrlOrFile(String path) {
         System.out.println("in readUrlOrFile function, returns completable future<string>");
         return CompletableFuture.supplyAsync(() -> {
@@ -32,6 +31,12 @@ public class Reader {
         });
     }
 
+    /**
+     * Reads the url
+     * @param url
+     * @return
+     * @throws IOException
+     */
     public static CompletableFuture<String> readURL(String url) throws IOException {
         return CompletableFuture.supplyAsync(() -> {
             HttpURLConnection connection = null;
@@ -72,6 +77,13 @@ public class Reader {
         });
     }
 
+    /**
+     * Reads the url without the last line
+     * This was used for reading the url javascript file, and there were issues returning the js with return lib, so we removed the last line
+     * @param urlString
+     * @return
+     * @throws IOException
+     */
     public static CompletableFuture<String> readURLNoLastLine(String urlString) throws IOException {
         return CompletableFuture.supplyAsync(() -> {
             StringBuilder contentBuilder = new StringBuilder();
@@ -103,6 +115,11 @@ public class Reader {
         });
     }
 
+    /**
+     * Reads the file
+     * @param filePath
+     * @return
+     */
     public static CompletableFuture<String> readFile(String filePath) {
         return CompletableFuture.supplyAsync(() -> {
             try {
@@ -113,6 +130,12 @@ public class Reader {
         });
     }
 
+    /**
+     * Reads the local file
+     * @param filePath
+     * @return
+     * @throws IOException
+     */
     private static String readLocalFile(String filePath) throws IOException {
         Path path = Paths.get(filePath);
 

@@ -15,7 +15,6 @@ import javax.script.ScriptEngineManager;
 // import org.graalvm.polyglot.Value;
 // import org.graalvm.polyglot.*;
 // import org.graalvm.polyglot.proxy.*;
-
 import java.io.InputStream;
 
 // JSON validator
@@ -27,9 +26,17 @@ import java.util.Map;
 
 
 public class HelperFunctions {
-    private static ScriptEngine engine = new ScriptEngineManager().getEngineByName("javascript");
+    // engine is part of graalvmpolyglot
+    // private static ScriptEngine engine = new ScriptEngineManager().getEngineByName("javascript");
     private static ClassLoader classLoader = Validator.class.getClassLoader();
 
+    /**
+     * Applies the filter function to the data
+     * @param filter_function
+     * @param data
+     * @param params
+     * @return
+     */
     public static String applyFilterFunctionEntry(String filter_function, String data, Map<String, String> params) {
         // String data = the source function 'url_read' applied to the source params
           System.out.println("HelperFunc: in getFilterFunctionEntry function");

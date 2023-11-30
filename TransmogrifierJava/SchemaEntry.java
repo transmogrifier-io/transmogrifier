@@ -26,7 +26,10 @@ public class SchemaEntry {
         this.transmogrifiedEntries = new ArrayList<>();
     }
 
-    // gets the schema and source functions, and runs the pipeline entry on the data
+    /**
+     * Transmogrifies and runs the pipeline for each Entry in the Schema
+     * @return transmogrified data as a String
+     */
     public List<String> transmogrifyEntry() {
         List<String> entryData = new ArrayList<>();
         for (JSONObject entry : this.entries) {

@@ -25,11 +25,12 @@ public class Entry {
         this.sinks = sinks;
     }
 
-    public Entry() {
 
-    }
-
-    // returns the transformed data
+    /**
+     * Runs the pipeline for each SchemaEntry in the Schema
+     * @param schema
+     * @return transmogrified data as a String
+     */
     public String runPipelineEntry(String schema) {
         System.out.println("Entry.java: in runPipelineEntry function");
         // the processed data for entry

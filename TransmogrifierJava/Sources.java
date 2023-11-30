@@ -34,7 +34,7 @@ public class Sources {
     /**
      * Gets the source function from the source JSONObject
      * @param source
-     * @return
+     * @return Completeable Future String
      */
     public static CompletableFuture<String> getSourceFunction(JSONObject source) {
         String name = (String) source.get("func"); // url_read

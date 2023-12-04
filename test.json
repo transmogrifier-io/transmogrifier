@@ -1,0 +1,73 @@
+[
+    {
+      "schema": "https://raw.githubusercontent.com/transmogrifier-io/transmogrifier/felixng_oden-to-transmog-filter/schemas/manifest-schema.json",
+      
+      "filters": [
+        {
+          "func": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/ms-ss-rg-collector-update/collectors/collector-json.js"
+        },
+        {
+          "func": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/filters/validate.js",
+          "params": {
+            "validator": "json"
+          }
+        },
+        {
+          "func": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/filters/stringify.js",
+          "params": {
+            "indent": true
+          }
+        }
+      ],
+      "sinks": [
+        {
+          "func": "file_write",
+          "params": {
+            "path": "./all-my-data-1.json"
+          }
+        },
+        {
+          "func": "file_write",
+          "params": {
+            "path": "./all-my-data-2.json"
+          }
+        }
+      ],
+      "entries": [
+        {
+          "source": {
+            "func": "url_read",
+            "params": {
+              "path": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Client/main/data.json"
+            }
+          },
+          "filters": [
+            {
+              "func": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/brian-felix-oden-to-transmog-filter/filters/oden-to-transmog.js",
+              "params": {
+                "category": "public-art"
+              }
+            },
+            {
+              "func": "https://raw.githubusercontent.com/OpendataDeveloperNetwork/ODEN-Transmogrifiers/dev/filters/stringify.js",
+              "params": {
+                "indent": true
+              }
+            }
+          ],
+          "sinks": [{
+            "func": "file_write",
+            "params": {
+              "path": "./output-test.json"
+            }
+          },
+          {
+            "func": "file_write",
+            "params": {
+              "path": "./output-test2.json"
+            }
+          }]
+        }
+      ]
+    }
+  ]

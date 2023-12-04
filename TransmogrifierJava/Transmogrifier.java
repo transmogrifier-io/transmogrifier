@@ -58,7 +58,7 @@ public class Transmogrifier {
     // example main atm
     public static void main(String[] args) {
         JSONParser parser = new JSONParser();
-        try (FileReader reader = new FileReader("manifest_example_nofilters.json")) {
+        try (FileReader reader = new FileReader("manifest_example_to_lower.json")) {
             Object obj = parser.parse(reader);
             List<JSONObject> jsonObject = (List<JSONObject>) obj; // list of json object
             Transmogrifier transmogrifier = new Transmogrifier(jsonObject);

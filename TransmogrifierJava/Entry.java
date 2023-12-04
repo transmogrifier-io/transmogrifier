@@ -32,7 +32,6 @@ public class Entry {
      * @return transmogrified data as a String
      */
     public String runPipelineEntry(String schema) {
-        System.out.println("Entry.java: in runPipelineEntry function");
         // the processed data for entry
         String data = "";
         try {

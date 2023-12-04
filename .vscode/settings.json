@@ -12,7 +12,8 @@
     "c:\\Users\\elain\\Downloads\\jar_files (3)\\everit-json-schema-1.14.2.jar",
     "c:\\Users\\elain\\Downloads\\jar_files\\everit-json-schema-jdk6-1.9.2.jar",
     "jar/json-simple-1.1.1.jar",
-    "jar/json-20180130.jar"
+    "jar/json-20180130.jar",
+    "jar/everit-json-schema-jdk6-1.9.2.jar"
   ],
   "graalvm.home": "C:\\Users\\elain\\Downloads\\graalvm-jdk-17_windows-x64_bin\\graalvm-jdk-17.0.9+11.1",
   "graalvm.installations": [

@@ -16,7 +16,6 @@ public class Reader {
      * Reads the url or file
      */
     public static CompletableFuture<String> readUrlOrFile(String path) {
-        System.out.println("in readUrlOrFile function, returns completable future<string>");
         return CompletableFuture.supplyAsync(() -> {
             try {
                 if (path.startsWith("http://") || path.startsWith("https://")) {

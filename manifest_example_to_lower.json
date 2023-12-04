@@ -6,7 +6,7 @@
       {
         "func": "file_write",
         "params": {
-          "path": "./schema-data-1.json"
+          "path": "./java-entries-all-data.json"
         }
       }
     ],
@@ -27,7 +27,7 @@
           {
             "func": "file_write",
             "params": {
-              "path": "./entries-data-lowered.json"
+              "path": "./java-entries-data-lowered.json"
             }
           }
         ]
@@ -48,7 +48,7 @@
           {
             "func": "file_write",
             "params": {
-              "path": "./entries-data-no-filter.json"
+              "path": "./java-entries-data-no-filter.json"
             }
           }
         ]

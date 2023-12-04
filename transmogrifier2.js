@@ -134,10 +134,13 @@ class Entry {
                 data = await filterFunc(data, filterParams);
             }
 
-            for (const sink of this.sinks) {
-                const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
-                const sinkParams = sink.params ?? {};
-                await sinkFunc(sinkParams, data);
+            if (this.sinks) {
+                for (const sink of this.sinks) {
+                    const sinkFunc = await HelperFunctions.getSinkFunction(sink.func);
+                    const sinkParams = sink.params ?? {};
+                    await sinkFunc(sinkParams, data);
+                }
+
             }
             return data;
         } catch (error) {

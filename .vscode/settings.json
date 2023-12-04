@@ -2,7 +2,6 @@
   "java.project.referencedLibraries": [
     "json-simple-1.1.1.jar",
     "c:\\Users\\elain\\Downloads\\jar_files\\json-20160810.jar",
-    "c:\\Users\\elain\\Downloads\\jar_files\\json-20180130.jar",
     "c:\\Users\\elain\\Downloads\\jar_files (3)\\handy-uri-templates-2.1.8.jar",
     "c:\\Users\\elain\\Downloads\\jar_files (3)\\joda-time-2.10.2.jar",
     "c:\\Users\\elain\\Downloads\\jar_files (3)\\re2j-1.6.jar",
@@ -12,7 +11,8 @@
     "c:\\Users\\elain\\Downloads\\jar_files (3)\\commons-collections-3.2.2.jar",
     "c:\\Users\\elain\\Downloads\\jar_files (3)\\everit-json-schema-1.14.2.jar",
     "c:\\Users\\elain\\Downloads\\jar_files\\everit-json-schema-jdk6-1.9.2.jar",
-    "jar/json-simple-1.1.1.jar"
+    "jar/json-simple-1.1.1.jar",
+    "jar/json-20180130.jar"
   ],
   "graalvm.home": "C:\\Users\\elain\\Downloads\\graalvm-jdk-17_windows-x64_bin\\graalvm-jdk-17.0.9+11.1",
   "graalvm.installations": [
